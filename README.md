@@ -8,7 +8,11 @@ There are a couple of reasons to set up a local DB aside from using the faculty 
 - playground to mess things up
 - backup option if faculty DB is down
 
-### Steps:
+### Steps for installing Oracle DB Express Edition
+- you might need at least 15-20 GB of free space
+  - the DB itself requires about 10 GB
+  - other dependencies (like `docker`) will also require extra space, so another 5-10 GB should be safe
+- you might need to close the web browser and other RAM-intensive programs
 - setup [`docker`](https://docs.docker.com/engine/install/) and [`docker-compose`](https://docs.docker.com/compose/install/)
 - clone this repo: https://github.com/oracle/docker-images/
 - navigate inside the repo to `OracleDatabase/SingleInstance/dockerfiles/18.4.0/`
