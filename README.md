@@ -75,7 +75,21 @@ SYS
 
 ### Creating users
 
-Work in progress.
+```
+alter session set "_ORACLE_SCRIPT"=true;
+
+create user grupa identified by parola;
+
+GRANT CREATE SESSION TO grupa;
+GRANT CREATE TABLE TO grupa;
+GRANT CREATE VIEW TO grupa;
+GRANT CREATE SEQUENCE TO grupa;
+-- etc
+-- we will probably need to use similar commands for functions, procedures, triggers, types
+
+alter user grupa DEFAULT TABLESPACE users quota unlimited on users;
+-- "users" seems to be the default tablespace /shrug
+```
 
 ### Other steps:
 - disabling features
