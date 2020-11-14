@@ -4,12 +4,14 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
 - colecții
   - `bulk collect`
 - cursoare
-  - iterare rând cu rând sau per batch
+  - iterare rând cu rând sau per batch (de ce?)
   - reutilizare de cod
 - funcții și proceduri
   - destul de evident: organizare, reutilizare de cod
 - declanșatori (triggers)
   - denormalizare
+    - counter cache
   - păstrarea integrității datelor
+    - emulat chei străine
   - impunerea unor restricții (?)
 - excepții
