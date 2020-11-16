@@ -6,6 +6,7 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
 - cursoare
   - iterare rând cu rând sau per batch (de ce?)
   - reutilizare de cod
+  - prevenire sql injection
 - funcții și proceduri
   - destul de evident: organizare, reutilizare de cod
 - declanșatori (triggers)
