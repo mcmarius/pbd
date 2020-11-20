@@ -3,6 +3,7 @@
 Cu ce ar fi bine să rămâneți de pe urma acestui laborator
 - colecții
   - `bulk collect`
+  - generare de date
 - cursoare
   - iterare rând cu rând sau per batch (de ce?)
   - reutilizare de cod
@@ -17,3 +18,6 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
     - emulat chei străine
   - impunerea unor restricții (?)
 - excepții
+- analizarea planurilor de execuție
+  - identificarea porțiunilor lente din cererile `SQL`
+  - gradul de utilizare al indecșilor
