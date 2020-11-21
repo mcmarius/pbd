@@ -10,6 +10,7 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
   - prevenire sql injection
 - funcții și proceduri
   - destul de evident: organizare, reutilizare de cod
+  - invalidare, recompilare
 - pachete (ideea e că există)
 - declanșatori (triggers)
   - denormalizare
