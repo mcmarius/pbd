@@ -1,6 +1,7 @@
 ## Rezumat
 
 Cu ce ar fi bine să rămâneți de pe urma acestui laborator
+- când avem nevoie de limbaje procedurale în bazele de date relaționale
 - colecții
   - `bulk collect`
   - generare de date
