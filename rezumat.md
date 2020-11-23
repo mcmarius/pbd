@@ -19,6 +19,7 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
   - păstrarea integrității datelor
     - emulat chei străine
   - impunerea unor restricții (?)
+  - logging/auditare
 - excepții
 - analizarea planurilor de execuție
   - identificarea porțiunilor lente din cererile `SQL`
