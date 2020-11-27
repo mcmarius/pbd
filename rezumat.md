@@ -19,6 +19,7 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
   - păstrarea integrității datelor
     - emulat chei străine
   - impunerea unor restricții (?)
+    - unicitate între coloanele mai multor tabele
   - logging/auditare
 - excepții
 - analizarea planurilor de execuție
