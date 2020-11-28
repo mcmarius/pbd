@@ -20,6 +20,7 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
     - emulat chei străine
   - impunerea unor restricții (?)
     - unicitate între coloanele mai multor tabele
+    - alte idei năstrușnice ale clienților sau ale managerilor
   - logging/auditare
 - excepții
 - analizarea planurilor de execuție
