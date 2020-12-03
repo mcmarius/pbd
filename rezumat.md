@@ -12,6 +12,7 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
 - funcții și proceduri
   - destul de evident: organizare, reutilizare de cod
   - invalidare, recompilare
+  - indecși
 - pachete (ideea e că există)
 - declanșatori (triggers)
   - denormalizare
