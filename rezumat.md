@@ -13,7 +13,9 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
   - destul de evident: organizare, reutilizare de cod
   - invalidare, recompilare
   - indecși
-- pachete (ideea e că există)
+- pachete:
+  - pt Oracle: ideea e că există
+  - în PostgreSQL nu există, în schimb pot fi folosite scheme (ceea ce nu prea există în Oracle)
 - declanșatori (triggers)
   - denormalizare
     - counter cache
