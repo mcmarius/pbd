@@ -9,6 +9,9 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
   - iterare rând cu rând sau per batch (de ce?)
   - reutilizare de cod
   - prevenire sql injection
+  - paginare
+    - limit/top și offset
+    - keyset
 - funcții și proceduri
   - destul de evident: organizare, reutilizare de cod
   - invalidare, recompilare
