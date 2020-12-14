@@ -8,7 +8,7 @@ Cu ce ar fi bine să rămâneți de pe urma acestui laborator
 - cursoare
   - iterare rând cu rând sau per batch (de ce?)
   - reutilizare de cod
-  - prevenire sql injection
+  - prevenire sql injection (am adăugat acest "avantaj" mai mult ca să știți de sql injection) 
   - paginare
     - limit/top și offset
     - keyset
