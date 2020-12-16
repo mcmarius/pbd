@@ -210,6 +210,9 @@ SP2-0749: Cannot resolve circular path of synonym "dba_feature_usage_statistics"
 Show parameters query failed 
 ```
 
+Misc stuff:
+- it seems to be against T&C to publish benchmarks: https://stackoverflow.com/a/12116865 🙊
+
 - recommended for sql developer tips:
   - https://www.thatjeffsmith.com/archive/2012/05/getting-started-with-sql-developer-less-than-5-minutes/
 
