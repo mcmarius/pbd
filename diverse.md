@@ -14,6 +14,10 @@ Imbricate:
 Indexate:
 - nu necesită extinderea automată a capacității interne, pot avea indici negativi
 
+**Q: O funcție poate întoarce un cursor?**
+
+A: [Da.](https://stackoverflow.com/questions/25891044/returning-a-ref-cursor-from-a-oracle-function)
+
 -----
 
 ### Diverse link-uri
