@@ -20,6 +20,10 @@ A: [Da.](https://stackoverflow.com/questions/25891044/returning-a-ref-cursor-fro
 
 -----
 
+TIL se poate folosi `cursor%rowtype`
+
+-----
+
 ### Diverse link-uri
 
 - https://stackoverflow.com/questions/49110728/where-current-of-in-pl-sql
