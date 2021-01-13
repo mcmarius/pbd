@@ -20,7 +20,9 @@ A: [Da.](https://stackoverflow.com/questions/25891044/returning-a-ref-cursor-fro
 
 -----
 
-TIL se poate folosi `cursor%rowtype`
+TIL se poate folosi `cursor%rowtype`.
+
+`update from`
 
 -----
 
