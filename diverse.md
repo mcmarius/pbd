@@ -24,6 +24,8 @@ TIL se poate folosi `cursor%rowtype`.
 
 `update from`
 
+funcții analitice
+
 -----
 
 ### Diverse link-uri
