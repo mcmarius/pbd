@@ -2,7 +2,7 @@
 
 **Q: `binary_integer` sau `pls_integer`?**
 
-A: În versiunile actuale e același lucru *[de adăugat referințe]*.
+A: În versiunile actuale e același lucru (documentații: [11g](https://docs.oracle.com/cd/E11882_01/appdev.112/e25519/datatypes.htm#LNPLS319), [12c](https://docs.oracle.com/database/121/LNPLS/datatypes.htm#LNPLS99938)).
 
 **Q: Tablouri imbricate sau indexate?**
 
