@@ -28,6 +28,14 @@ funcții analitice
 
 -----
 
+<!--
+
+TODO
+De exportat tabelele din schema HR în csv, apoi de portat manual 😢 script-urile pt constrângeri și mai știu eu ce
+
+-->
+
+
 ### Diverse link-uri
 
 - https://stackoverflow.com/questions/49110728/where-current-of-in-pl-sql
