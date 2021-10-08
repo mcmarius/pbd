@@ -76,8 +76,34 @@ SYS
 ### Creating users
 
 ```
+-- TODO: do NOT user _ORACLE_SCRIPT
+-- see why here: https://dba.stackexchange.com/questions/269055/impact-of-oracle-script-true-in-oracle-database-18c
 alter session set "_ORACLE_SCRIPT"=true;
+```
 
+```
+<begin of alternative to _ORACLE_SCRIPT> (need to test more)
+-- alternativ ??
+create pluggable database mpdb ADMIN USER pdbadmin IDENTIFIED BY Passw0rd
+roles=(DBA) file_name_convert = ('/pdbseed/', '/mpbd/');
+
+--drop PLUGGABLE DATABASE mpdb INCLUDING DATAFILES;
+```
+```
+-- find the pdb xe name from
+cat /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora 
+-- connect with
+user: pdbadmin
+password: Passw0rd
+role: default
+service name (not sid): <the one from cat above> xepdb1 (in my case)
+
+-- select * from all_users order by username;
+<end of alternative to _ORACLE_SCRIPT>
+```
+
+-------
+```
 create user grupa identified by parola;
 
 GRANT CREATE SESSION TO grupa;
