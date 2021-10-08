@@ -123,6 +123,8 @@ GRANT CREATE SEQUENCE TO grupa;
 
 alter user grupa DEFAULT TABLESPACE users quota unlimited on users;
 -- "users" seems to be the default tablespace /shrug
+
+-- reset password with something like alter user pdbadmin IDENTIFIED by Passw0rd;
 ```
 
 ### Other steps:
