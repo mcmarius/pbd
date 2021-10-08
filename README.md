@@ -84,6 +84,14 @@ alter session set "_ORACLE_SCRIPT"=true;
 ```
 <begin of alternative to _ORACLE_SCRIPT> (need to test more)
 -- alternativ ??
+
+
+alter PLUGGABLE DATABASE ALL OPEN;
+
+alter PLUGGABLE DATABASE ALL SAVE STATE;
+
+-- not sure when we need to reset the db to start the pdbs /shrug
+
 create pluggable database mpdb ADMIN USER pdbadmin IDENTIFIED BY Passw0rd
 roles=(DBA) file_name_convert = ('/pdbseed/', '/mpbd/');
 
