@@ -9,85 +9,197 @@ There are a couple of reasons to set up a local DB aside from using the faculty 
 - backup option if faculty DB is down
 
 ### Steps for installing Oracle DB Express Edition
-- you might need at least 15-20 GB of free space
-  - the DB itself requires about 10 GB
+- you might need at least ~~15-10~~ 10 GB of free space
+  - the DB itself requires about ~~10~~ ~5 GB (if my math is correct)
   - other dependencies (like `docker`) will also require extra space, so another 5-10 GB should be safe
-- you might need to close the web browser and other RAM-intensive programs
-- setup [`docker`](https://docs.docker.com/engine/install/) and [`docker-compose`](https://docs.docker.com/compose/install/)
-- clone this repo: https://github.com/oracle/docker-images/
-- navigate inside the repo to `OracleDatabase/SingleInstance/dockerfiles/18.4.0/`
-- `docker build -t oracle/database:18.4.0-xe -f Dockerfile.xe .`
-- create a file named `docker-compose.yml` with the following contents:
-```
-version: "3.5" # specify docker-compose version, v3.5 is compatible with docker 17.12.0+
+- you might need to close the web browser and other RAM-intensive programs (this might be old info)
+- setup ~~[`docker`](https://docs.docker.com/engine/install/) and [`docker-compose`](https://docs.docker.com/compose/install/)~~ [`podman`](https://podman.io/getting-started/installation)
 
-# Define the services/containers to be run
-services:
-  oracledb:
-    image: oracle/database:18.4.0-xe
-    environment:
-      - ORACLE_PWD=Passw0rd
-      # - ORACLE_CHARACTERSET=AL32UTF8 # default is AL32UTF8
-    volumes:
-      - ./oradata:/opt/oracle/oradata # persistent oracle database data.
-    ports:
-      - 1521:1521 
-      - 8080:8080 # apex
-      - 5500:5500 # oemexpress
+Mai nou există imagini oficiale slim: https://hub.docker.com/r/gvenzl/oracle-xe
+
+Pentru Windows probabil nu merită efortul, deoarece containerele sunt
+de fapt mașini virtuale pe Windows și pe macOS. Se poate descărca de aici: https://www.oracle.com/database/technologies/xe-downloads.html
+
+
 ```
-- `mkdir oradata`
-- `chmod -R o+w oradata/`
-  - this folder needs to have write permissions for other users and groups
-    - `-R` means recursive, `o` means other, `+w` means add write rights
-  - you might need to change file permissions from within the container (or I just messed things up on my machine)
-  - in order to do so:
-    - `docker-compose up`
-    - in another tab: `docker-compose --file docker-compose.yml exec oracledb sh`
-    - inside the container: `chmod -R o+w /opt/oracle/oradata/`
-- if something goes wrong:
-  - `docker-compose down`
-  - `docker-compose up` or `docker-compose up --build` to force a rebuild or if really needed `sudo docker-compose up`
-  - remove the `oradata/` directory and restart the previous steps (after creating the `docker-compose` file)
-  - see: https://github.com/hantsy/devops-sandbox/blob/master/oracle-database-18.4.0-xe.md
-- after a lot of waiting after `docker-compose up`, you should see:
+$ podman search docker.io/gvenzl/oracle-xe
+INDEX       NAME                        DESCRIPTION                                      STARS       OFFICIAL    AUTOMATED
+docker.io   docker.io/gvenzl/oracle-xe  Oracle Database XE (21c, 18c, 11g) for every...  80
 ```
-oracledb_1  | #########################
-oracledb_1  | DATABASE IS READY TO USE!
-oracledb_1  | #########################
+
+Apoi descărcăm cu `podman pull docker.io/gvenzl/oracle-xe:21.3.0-slim`. După ce e gata:
 ```
-- connect to the database:
-  - from shell inside the container
-    - `su -p oracle -c "sqlplus / as sysdba"`
-    - at the `SQL> ` prompt, `select user from dual;` should be successful
+Trying to pull docker.io/gvenzl/oracle-xe:21.3.0-slim...
+Getting image source signatures
+Copying blob f4069ceb7689 done  
+Copying blob 50b5143a8e9f done  
+Copying config 8c74998e13 done  
+Writing manifest to image destination
+Storing signatures
+8c74998e130b45f3923bb24d51aafcb400bf06cc451a18bd1270ef4fd0f9a6a6
 ```
-USER
---------------------------------------------------------------------------------
-SYS
+
+Verificăm că există imaginea:
 ```
-  - from SQL Developer:
-    - username: `sys` or `SYS` (since sql is case insensitive... at least in this case)
-    - **role: `SYSDBA` or `SYSOPER`**
-    - password: the one you set up in `docker-compose.yml`
-    - port: 1521 (exposed also using the settings provided in `docker-compose.yml`
-    - SID: `xe` (stands for express edition)
+$ podman images
+REPOSITORY                  TAG          IMAGE ID      CREATED      SIZE
+docker.io/gvenzl/oracle-xe  21.3.0-slim  8c74998e130b  3 weeks ago  2.08 GB
+```
+
+Creăm un container:
+```
+$ podman create --name=oracle-xe-container -p 1521:1521 -e ORACLE_PASSWORD=admin_pass1 -v oracle-volume:/opt/oracle/oradata gvenzl/oracle-xe:21.3.0-slim
+d35125f29eea1d1ba5ff4a98dd3fdf1c3be309154acddfb8e1151af3ebf5da7e
+```
+
+Apoi pornim containerul (scoatem `-ia` dacă nu vrem să vedem logs).
+Prima dată se face un setup inițial:
+```
+$ podman start -ia oracle-xe-container
+CONTAINER: done uncompressing database data files, duration: 17 seconds.
+CONTAINER: starting up Oracle Database...
+
+LSNRCTL for Linux: Version 21.0.0.0.0 - Production on 29-JUL-2022 20:15:29
+
+Copyright (c) 1991, 2021, Oracle.  All rights reserved.
+
+Starting /opt/oracle/product/21c/dbhomeXE/bin/tnslsnr: please wait...
+
+TNSLSNR for Linux: Version 21.0.0.0.0 - Production
+System parameter file is /opt/oracle/homes/OraDBHome21cXE/network/admin/listener.ora
+Log messages written to /opt/oracle/diag/tnslsnr/d35125f29eea/listener/alert/log.xml
+Listening on: (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC_FOR_XE)))
+Listening on: (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=0.0.0.0)(PORT=1521)))
+
+Connecting to (DESCRIPTION=(ADDRESS=(PROTOCOL=IPC)(KEY=EXTPROC_FOR_XE)))
+STATUS of the LISTENER
+------------------------
+Alias                     LISTENER
+Version                   TNSLSNR for Linux: Version 21.0.0.0.0 - Production
+Start Date                29-JUL-2022 20:15:29
+Uptime                    0 days 0 hr. 0 min. 0 sec
+Trace Level               off
+Security                  ON: Local OS Authentication
+SNMP                      OFF
+Default Service           XE
+Listener Parameter File   /opt/oracle/homes/OraDBHome21cXE/network/admin/listener.ora
+Listener Log File         /opt/oracle/diag/tnslsnr/d35125f29eea/listener/alert/log.xml
+Listening Endpoints Summary...
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC_FOR_XE)))
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=0.0.0.0)(PORT=1521)))
+The listener supports no services
+The command completed successfully
+ORACLE instance started.
+
+Total System Global Area 1241512272 bytes
+Fixed Size		    9685328 bytes
+Variable Size		  671088640 bytes
+Database Buffers	  553648128 bytes
+Redo Buffers		    7090176 bytes
+Database mounted.
+Database opened.
+
+CONTAINER: Resetting SYS and SYSTEM passwords.
+
+User altered.
+
+
+User altered.
+
+
+#########################
+DATABASE IS READY TO USE!
+#########################
+
+##################################################################
+CONTAINER: The following output is now from the alert_XE.log file:
+##################################################################
+XEPDB1(3):Opening pdb with Resource Manager plan: DEFAULT_PLAN
+Pluggable database XEPDB1 opened read write
+2022-07-29T20:15:41.370795+00:00
+Resize operation completed for file# 201, fname /opt/oracle/oradata/XE/temp01.dbf, old size 2048K, new size 12288K
+Starting background process CJQ0
+2022-07-29T20:15:41.454790+00:00
+CJQ0 started with pid=55, OS id=196 
+Completed: ALTER DATABASE OPEN
+2022-07-29T20:15:41.535385+00:00
+Using default pga_aggregate_limit of 2048 MB
+2022-07-29T20:15:43.470882+00:00
+TABLE SYS.WRP$_REPORTS: ADDED INTERVAL PARTITION SYS_P381 (4593) VALUES LESS THAN (TO_DATE(' 2022-07-30 01:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'))
+TABLE SYS.WRP$_REPORTS_DETAILS: ADDED INTERVAL PARTITION SYS_P382 (4593) VALUES LESS THAN (TO_DATE(' 2022-07-30 01:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'))
+TABLE SYS.WRP$_REPORTS_TIME_BANDS: ADDED INTERVAL PARTITION SYS_P385 (4592) VALUES LESS THAN (TO_DATE(' 2022-07-29 01:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'))
+```
+
+Avem nevoie să ne creăm useri ca să nu lucrăm pe baza de date principală cu drepturi de admin full.
+Ne conectăm fie din container, fie din SQL Developer, momentan ca admini:
+```
+$ podman exec -it oracle-xe-container bash
+```
+
+Imaginea are un script predefinit `createAppUser`:
+```
+$ createAppUser grupa351 parola
+```
+
+Ca să ne conectăm ca admini, fie folosim userul `SYSTEM` și introducem manual parola, fie cu `sqlplus / as sysdba`:
+```
+$ sqlplus / as sysdba
+
+SQL*Plus: Release 21.0.0.0.0 - Production on Fri Jul 29 20:44:06 2022
+Version 21.3.0.0.0
+
+Copyright (c) 1982, 2021, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 21c Express Edition Release 21.0.0.0.0 - Production
+Version 21.3.0.0.0
+```
 
 :warning: Warning! We will not use this user on an every day basis. Instead, we need to create users with limited privileges so they are not able to blow up the whole system :boom:
 
-### Creating users
 
+Ca să ne conectăm ca useri normali, fie cu `sqlplus`, fie din SQL Developer:
 ```
--- TODO: do NOT user _ORACLE_SCRIPT
--- see why here: https://dba.stackexchange.com/questions/269055/impact-of-oracle-script-true-in-oracle-database-18c
-alter session set "_ORACLE_SCRIPT"=true;
+$ sqlplus grupa351@XEPDB1
 ```
 
-```
-<begin of alternative to _ORACLE_SCRIPT> (need to test more)
--- alternativ ??
+Nu am vrea să introducem și parola direct în acea comandă ca să nu rămână în
+istoricul terminalului.
 
+Trebuie să vedem următorul text ca să știm că db a pornit:
+```
+#########################
+DATABASE IS READY TO USE!
+#########################
+```
+
+  - from SQL Developer:
+    - username: `sys` or `SYS` (since sql is case insensitive... at least in this case)
+    - **role: `SYSDBA` or `SYSOPER`**
+    - password: cea de mai sus; în cazul nostru, `admin_pass1`
+    - port: 1521 (configurat când am creat containerul)
+    - SID: `xe` (de la express edition)
+
+Ca user normal:
+- username: `grupa35x`
+- password: `parola`
+- port: 1521
+- nu ne conectăm cu `SID`, ci cu `Service name`: `XEPDB1`
+
+Implicit, este deja creată o bază de date pluggable: XEPDB1.
+
+Dacă vrem să verificăm că așa se numește, rulăm logați ca admin:
+```sql
+SELECT name, pdb FROM v$services;
+```
+
+// https://www.databasestar.com/oracle-pdb/
+
+```
+-- ??
 
 alter PLUGGABLE DATABASE ALL OPEN;
-
 alter PLUGGABLE DATABASE ALL SAVE STATE;
 
 -- not sure when we need to reset the db to start the pdbs /shrug
@@ -99,7 +211,7 @@ roles=(DBA) file_name_convert = ('/pdbseed/', '/mpbd/');
 ```
 ```
 -- find the pdb xe name from
-cat /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora 
+cat /opt/oracle/product/21c/dbhomeXE/network/admin/tnsnames.ora 
 -- connect with
 user: pdbadmin
 password: Passw0rd
@@ -111,6 +223,8 @@ service name (not sid): <the one from cat above> xepdb1 (in my case)
 ```
 
 -------
+
+Dacă nu avem suficiente drepturi cu userul normal, folosim din nou adminul:
 ```
 create user grupa identified by parola;
 
