@@ -183,7 +183,7 @@ DATABASE IS READY TO USE!
 
 Ca user normal:
 - username: `grupa35x`
-- password: `parola`
+- password: `oracle`
 - port: 1521
 - nu ne conectăm cu `SID`, ci cu `Service name`: `XEPDB1`
 
@@ -365,4 +365,103 @@ Misc stuff:
 
 - recommended for sql developer tips:
   - https://www.thatjeffsmith.com/archive/2012/05/getting-started-with-sql-developer-less-than-5-minutes/
+
+
+### MS SQL Server setup
+
+See details here: https://hub.docker.com/_/microsoft-mssql-server
+
+```
+$ podman pull mcr.microsoft.com/mssql/server:2019-latest
+$ podman create --name=mssql-xe-container -p 1433:1433 -e "SA_PASSWORD=admin_pass1" -e "ACCEPT_EULA=Y" -e "MSSQL_PID=Express" -v mssql-volume:/var/opt/mssql/data mssql/server:2019-latest
+$ podman start -ia mssql-xe-container
+```
+
+Este necesar să dăm fiecare privilegiu separat. La fel ca mai sus, dorim să ne
+creăm o bază de date separată și un user cu mai puține privilegii.
+
+```sql
+SELECT @@version;
+
+CREATE DATABASE test_db;
+
+-- only once
+CREATE LOGIN seria35
+WITH PASSWORD = 'M$_login1', CHECK_POLICY = OFF;
+
+USE test_db;
+
+-- for each db
+CREATE USER seria35
+FOR LOGIN seria35;
+
+GRANT EXECUTE TO seria35;
+GRANT ALTER ON SCHEMA::dbo TO seria35;
+--GRANT CREATE DATABASE TO seria35;
+GRANT CREATE TABLE TO seria35;
+GRANT REFERENCES TO seria35;
+GRANT INSERT TO seria35;
+GRANT UPDATE TO seria35;
+GRANT SELECT TO seria35;
+GRANT DELETE TO seria35;
+
+--GRANT ALL TO seria35; -- deprecated
+--REVOKE ALL TO seria35;
+
+-- cleanup
+USE master;
+
+DROP USER grupa351;
+DROP LOGIN grupa351;
+DROP DATABASE test_db;
+```
+
+### MariaDB
+
+```
+$ podman pull docker.io/mariadb:10.9
+$ podman create --name=mariadb-container -p 3306:3306 -e "MARIADB_ROOT_PASSWORD=my-secret-pw" -e "MARIADB_DATABASE=test_db" -e "MARIADB_USER=seria35" -e "MARIADB_PASSWORD=mariadb_pw" -v mariadb-volume:/var/lib/mysql mariadb:10.9
+$ podman start -ia mariadb-container
+# stop with
+$ podman stop mariadb-container
+```
+
+```sql
+SHOW GRANTS FOR seria35;
+GRANT ALL PRIVILEGES ON hr.* TO seria35;
+```
+
+Alternative images: https://hub.docker.com/r/yobasystems/alpine-mariadb
+
+### PostgreSQL
+
+```
+$ podman pull docker.io/postgres:14.5-alpine
+$ podman create --name=postgres-container -p 5432:5432 -e "POSTGRES_PASSWORD=pg-password" -v pg-volume:/var/lib/postgresql/data postgres:14.5-alpine
+$ podman start -ia postgres-container
+```
+
+Admin:
+
+```sql
+CREATE USER seria35 WITH PASSWORD 'Pg=passwd2!';
+CREATE DATABASE pbd;
+GRANT ALL PRIVILEGES ON DATABASE pbd TO seria35;
+
+-- cleanup
+DROP DATABASE pbd;
+DROP USER seria35;
+```
+
+User:
+```sql
+select count(*) from employees e ;
+
+--CREATE SCHEMA test_schema;
+--SHOW search_path;
+
+SET search_path TO public;
+select count(*) from employees e ;
+SHOW search_path;
+```
 
