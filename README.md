@@ -1,34 +1,74 @@
 # Proiectarea Bazelor de Date
 
-### Intro
+### Introducere
 
-There are a couple of reasons to set up a local DB aside from using the faculty DB:
-- admin rights to understand what is happening more exactly
-- access to new features
-- playground to mess things up
-- backup option if faculty DB is down
+Termenul de "bază de date" (BD sau DB) se poate referi la:
+- bază de date la nivel de SQL: `CREATE DATABASE test_db;`
+- sistem de gestiune a bazelor de date (SGBD/DBMS)
 
-### Steps for installing Oracle DB Express Edition
-- you might need at least ~~15-10~~ 10 GB of free space
-  - the DB itself requires about ~~10~~ ~5 GB (if my math is correct)
-  - other dependencies (like `docker`) will also require extra space, so another 5-10 GB should be safe
-- you might need to close the web browser and other RAM-intensive programs (this might be old info)
-- setup ~~[`docker`](https://docs.docker.com/engine/install/) and [`docker-compose`](https://docs.docker.com/compose/install/)~~ [`podman`](https://podman.io/getting-started/installation)
+SGBD-urile relaționale cele mai întâlnite sunt Oracle, MySQL/MariaDB, Microsoft SQL Server, PostgreSQL și SQLite.
+Ar mai fi și altele, dar nu prea sunt alese în practică pentru proiecte noi, motiv pentru care nu le consider de interes.
 
-Mai nou există imagini oficiale slim: https://hub.docker.com/r/gvenzl/oracle-xe
+În majoritatea situațiilor de mai jos, prin bază de date ne referim de fapt la SGBD.
 
-Pentru Windows probabil nu merită efortul, deoarece containerele sunt
-de fapt mașini virtuale pe Windows și pe macOS. Se poate descărca de aici: https://www.oracle.com/database/technologies/xe-downloads.html
+Pentru a ne conecta la o bază de date, avem nevoie de un client SQL. Exemple: Oracle SQL Developer, DataGrip, DBeaver, sqlplus, psql.
 
+Avem mai multe motive să ne creăm o bază de date locală pe lângă baza de date de la facultate:
+- drepturi de admin ca să înțelegem mai bine ce se întâmplă
+- acces la versiuni mai noi
+- loc de experimentat fără să fie vreo problemă dacă stricăm ceva esențial
+- soluție de backup dacă nu merge BD a facultății
 
+### Cerințe preliminare
+- minim 8-10 GB spațiu liber pe disc
+  - avem nevoie de spațiu atât pentru SGBD-uri, cât și pentru programele ajutătoare
+  - bazele de date create de noi nu ar trebui să ocupe mai mult de câțiva MB
+- instalare ~~[`docker`](https://docs.docker.com/engine/install/) și [`docker-compose`](https://docs.docker.com/compose/install/)~~ [`podman`](https://podman.io/getting-started/installation)
+
+Spațiul ocupat de imagini (total ~4.2 GB):
+```
+$ podman images
+REPOSITORY                      TAG          IMAGE ID      CREATED       SIZE
+docker.io/library/mariadb       10.9         01d138caf7d0  2 weeks ago   391 MB
+docker.io/library/postgres      14.5-alpine  a762fe0bf572  4 weeks ago   220 MB
+mcr.microsoft.com/mssql/server  2019-latest  e3afdc6d8e5c  7 weeks ago   1.48 GB
+docker.io/gvenzl/oracle-xe      21.3.0-slim  8c74998e130b  2 months ago  2.08 GB
+```
+
+Spațiul ocupat de volumele containerelor (total ~3.2 GB):
+```
+$ du -h pbd_data/backups/podman/*
+137M    pbd_data/backups/podman/mariadb-volume.bak
+107M    pbd_data/backups/podman/mssql-volume.bak
+2,8G    pbd_data/backups/podman/oracle-volume.bak
+68M    pbd_data/backups/podman/pg-volume.bak
+```
+
+Am folosit imagini oficiale slim pentru Oracle DB Express Edition (XE), dar tot ocupă foarte mult în comparație cu alternativele.
+După ce mi-am configurat local Oracle, au apărut și imagini cu tag "faststart", însă nu ne oferă vreun avantaj aici.
+Detalii pe pagina oficială: https://hub.docker.com/r/gvenzl/oracle-xe
+
+Prefer să folosesc containere ca să nu ruleze non-stop ca procese de tip serviciu și ca să le pot șterge/reface mai ușor.
+Prefer podman în loc de docker deoarece nu necesită drepturi de admin în mod uzual.
+
+De văzut dacă merită efortul pe Windows, deoarece containerele sunt
+de fapt mașini virtuale pe Windows și pe macOS. Oracle DB se poate descărca și de aici: https://www.oracle.com/database/technologies/xe-downloads.html
+
+Pe macOS (din ce am auzit/citit) este posibil să fie nevoie de setări în plus ca să meargă rețeaua.
+Vedeți cu [colima](https://github.com/abiosoft/colima).
+
+### Setup Oracle DB XE
+
+Dacă vrem să verificăm că există imaginea în registry înainte să o descărcăm:
 ```
 $ podman search docker.io/gvenzl/oracle-xe
 INDEX       NAME                        DESCRIPTION                                      STARS       OFFICIAL    AUTOMATED
 docker.io   docker.io/gvenzl/oracle-xe  Oracle Database XE (21c, 18c, 11g) for every...  80
 ```
 
-Apoi descărcăm cu `podman pull docker.io/gvenzl/oracle-xe:21.3.0-slim`. După ce e gata:
+Apoi așteptăm să se descarce imaginea:
 ```
+$ podman pull docker.io/gvenzl/oracle-xe:21.3.0-slim
 Trying to pull docker.io/gvenzl/oracle-xe:21.3.0-slim...
 Getting image source signatures
 Copying blob f4069ceb7689 done  
@@ -48,12 +88,16 @@ docker.io/gvenzl/oracle-xe  21.3.0-slim  8c74998e130b  3 weeks ago  2.08 GB
 
 Creăm un container:
 ```
-$ podman create --name=oracle-xe-container -p 1521:1521 -e ORACLE_PASSWORD=admin_pass1 -v oracle-volume:/opt/oracle/oradata gvenzl/oracle-xe:21.3.0-slim
+$ podman create --name=oracle-xe-container \
+                -p 1521:1521 \
+                -e ORACLE_PASSWORD=admin_pass1 \
+                -v oracle-volume:/opt/oracle/oradata \
+                gvenzl/oracle-xe:21.3.0-slim
 d35125f29eea1d1ba5ff4a98dd3fdf1c3be309154acddfb8e1151af3ebf5da7e
 ```
 
 Apoi pornim containerul (scoatem `-ia` dacă nu vrem să vedem logs).
-Prima dată se face un setup inițial:
+Prima dată se face un setup inițial care durează ceva mai mult:
 ```
 $ podman start -ia oracle-xe-container
 CONTAINER: done uncompressing database data files, duration: 17 seconds.
@@ -130,16 +174,26 @@ TABLE SYS.WRP$_REPORTS_DETAILS: ADDED INTERVAL PARTITION SYS_P382 (4593) VALUES 
 TABLE SYS.WRP$_REPORTS_TIME_BANDS: ADDED INTERVAL PARTITION SYS_P385 (4592) VALUES LESS THAN (TO_DATE(' 2022-07-29 01:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'))
 ```
 
+Trebuie să vedem următorul text în logs ca să știm că DB a pornit și că merge să ne conectăm:
+```
+#########################
+DATABASE IS READY TO USE!
+#########################
+```
+
 Avem nevoie să ne creăm useri ca să nu lucrăm pe baza de date principală cu drepturi de admin full.
-Ne conectăm fie din container, fie din SQL Developer, momentan ca admini:
+Ne conectăm fie din container, fie din clientul SQL (sau alt client), momentan ca admini:
 ```
 $ podman exec -it oracle-xe-container bash
 ```
 
 Imaginea are un script predefinit `createAppUser`:
 ```
-$ createAppUser grupa351 parola
+$ createAppUser grupa36x parola1
 ```
+
+Din nefericire, script-ul primește parola ca argument, nu o citește de la stdin.
+Astfel, parola va rămâne în istoricul terminalului. Dacă ne interesează, parola poate fi schimbată ulterior.
 
 Ca să ne conectăm ca admini, fie folosim userul `SYSTEM` și introducem manual parola, fie cu `sqlplus / as sysdba`:
 ```
@@ -156,37 +210,32 @@ Oracle Database 21c Express Edition Release 21.0.0.0.0 - Production
 Version 21.3.0.0.0
 ```
 
-:warning: Warning! We will not use this user on an every day basis. Instead, we need to create users with limited privileges so they are not able to blow up the whole system :boom:
+:warning: Atenție! Nu vom folosi în mod uzual acest user.
+Este de preferat să ne creăm useri cu drepturi (privilegii) limitate care să nu aibă posibilitatea să arunce în aer toată BD :boom:
 
-
-Ca să ne conectăm ca useri normali, fie cu `sqlplus`, fie din SQL Developer:
+Ca să ne conectăm ca useri normali, folosim `sqlplus` sau un alt client SQL. Din sqlplus arată așa:
 ```
-$ sqlplus grupa351@XEPDB1
-```
-
-Nu am vrea să introducem și parola direct în acea comandă ca să nu rămână în
-istoricul terminalului.
-
-Trebuie să vedem următorul text ca să știm că db a pornit:
-```
-#########################
-DATABASE IS READY TO USE!
-#########################
+$ sqlplus grupa36x@XEPDB1
 ```
 
-  - from SQL Developer:
-    - username: `sys` or `SYS` (since sql is case insensitive... at least in this case)
-    - **role: `SYSDBA` or `SYSOPER`**
-    - password: cea de mai sus; în cazul nostru, `admin_pass1`
-    - port: 1521 (configurat când am creat containerul)
-    - SID: `xe` (de la express edition)
+Nu am vrea să introducem și parola direct în acea comandă ca să nu rămână în istoricul terminalului.
 
-Ca user normal:
-- username: `grupa35x`
-- password: `oracle`
-- port: 1521
-- nu ne conectăm cu `SID`, ci cu `Service name`: `XEPDB1`
+Pentru a ne conecta cu un client SQL:
+- ca admin:
+  - username: `sys` sau `SYS` (SQL nu ține cont de majuscule... cel puțin aici nu pare să țină cont)
+  - **role: `SYSDBA` sau `SYSOPER`**
+  - password: `admin_pass1` (cea pe care am configurat-o mai sus)
+  - port: 1521 (configurat când am creat containerul)
+  - SID: `xe` (de la express edition)
+- ca user normal:
+  - username: `grupa36x`
+  - password: `parola1`
+  - port: 1521
+  - nu ne conectăm cu `SID`, ci cu `Service name`: `XEPDB1`
 
+Pentru credențialele bazei de date a facultății, veniți la ore :smile:
+
+PDB vine de la pluggable database (specific Oracle; detalii [aici](https://www.databasestar.com/oracle-pdb/)).
 Implicit, este deja creată o bază de date pluggable: XEPDB1.
 
 Dacă vrem să verificăm că așa se numește, rulăm logați ca admin:
@@ -194,274 +243,213 @@ Dacă vrem să verificăm că așa se numește, rulăm logați ca admin:
 SELECT name, pdb FROM v$services;
 ```
 
-// https://www.databasestar.com/oracle-pdb/
-
-```
--- ??
-
-alter PLUGGABLE DATABASE ALL OPEN;
-alter PLUGGABLE DATABASE ALL SAVE STATE;
-
--- not sure when we need to reset the db to start the pdbs /shrug
-
-create pluggable database mpdb ADMIN USER pdbadmin IDENTIFIED BY Passw0rd
-roles=(DBA) file_name_convert = ('/pdbseed/', '/mpbd/');
-
---drop PLUGGABLE DATABASE mpdb INCLUDING DATAFILES;
-```
-```
--- find the pdb xe name from
-cat /opt/oracle/product/21c/dbhomeXE/network/admin/tnsnames.ora 
--- connect with
-user: pdbadmin
-password: Passw0rd
-role: default
-service name (not sid): <the one from cat above> xepdb1 (in my case)
-
--- select * from all_users order by username;
-<end of alternative to _ORACLE_SCRIPT>
-```
-
--------
-
-Dacă nu avem suficiente drepturi cu userul normal, folosim din nou adminul:
-```
-create user grupa identified by parola;
+Script-ul din container `createAppUser` ar trebui să ne ofere drepturile de care avem nevoie în mod uzual.
+Dacă totuși nu avem suficiente drepturi cu userul normal, folosim din nou adminul:
+```sql
+CREATE USER grupa IDENTIFIED BY parola;
 
 GRANT CREATE SESSION TO grupa;
 GRANT CREATE TABLE TO grupa;
 GRANT CREATE VIEW TO grupa;
 GRANT CREATE SEQUENCE TO grupa;
 -- etc
--- we will probably need to use similar commands for functions, procedures, triggers, types
+-- comenzile sunt similare pentru funcții, proceduri, triggeri, tipuri de date
 
-alter user grupa DEFAULT TABLESPACE users quota unlimited on users;
--- "users" seems to be the default tablespace /shrug
+ALTER USER grupa DEFAULT TABLESPACE users QUOTA unlimited ON users;
+-- "users" pare să fie default tablespace
 
--- reset password with something like alter user pdbadmin IDENTIFIED by Passw0rd;
+-- pentru schimbat parola, comanda ar trebui să fie ALTER USER grupa IDENTIFIED by Passw0rd;
 ```
 
-### Other steps:
-- disabling features
-  - http://www.dba-oracle.com/t_dba_features_used_statistics.htm
-  - http://www.dba-oracle.com/t_xe_features_oracle_express.htm
-  - http://www.dba-oracle.com/t_se_features_enabled.htm
-  - https://grepora.com/2019/06/05/oracle-disable-awr-and-prevent-to-violate-diagnostic-tuning/
-  - https://petesdbablog.wordpress.com/2013/04/06/disable-oracle-diagnostic-pack-tuning-pack/
-  - http://www.dba-oracle.com/t_tuning_pack_disable.htm
+Pe DB de la facultate nu avem drepturi de admin, deci nu avem acces la tabele, vizualizări etc. de sistem (de exemplu cele cu `v$`).
 
-Running some (random) commands from the links above:
-```
-DESC dba_feature_usage_statistics;
+În Oracle DB, un user este echivalent cu o schemă, deci un user nu poate avea mai multe scheme.
+Dacă avem nevoie de o nouă schemă, o creăm cu sintaxa `CREATE USER`.
+Pentru acordarea mai multor drepturi deodată, folosim sintaxa `CREATE SCHEMA`.
+Detalii [aici](https://docs.oracle.com/cd/B19306_01/server.102/b14200/statements_6014.htm).
 
-EXEC DBMS_FEATURE_USAGE_INTERNAL.exec_db_usage_sampling(SYSDATE);
+#### Despre licențe și Oracle
 
-COLUMN name  FORMAT A60
-COLUMN detected_usages FORMAT 999999999999
+Nu sunt avocat, nu vă bazați pe informațiile din această secțiune.
 
-SELECT u1.name,
-       u1.detected_usages,
-       u1.currently_used,
-       u1.version
-FROM   dba_feature_usage_statistics u1
-WHERE  u1.version = (SELECT MAX(u2.version)
-                     FROM   dba_feature_usage_statistics u2
-                     WHERE  u2.name = u1.name)
-AND    u1.detected_usages > 0
-AND    u1.dbid = (SELECT dbid FROM v$database)
-ORDER BY name;
+Bazele de date Oracle pot fi folosite în mod gratuit dacă nu este vorba de scopuri comerciale. Edițiile principale sunt:
+- XE (express edition): de regulă cu scop educațional și pentru testare
+  - [aparent](https://asktom.oracle.com/pls/apex/f?p=100:11:::NO:RP:P11_QUESTION_ID:9536759800346388355) poate fi folosită gratuit pentru scopuri comerciale
+  - are numeroase limitări: memorie RAM, spațiu pe disc, actualizarea versiunii (trebuie upgrade de la zero, nu are patches)
+- SE (standard edition): licențe pe bani
+  - are activate "din fabrică" numeroase facilități care pot fi folosite fără licență, ceea ce duce la încălcarea termenilor și condițiilor
+  - înainte de utilizarea bazei de date, aceste facilități ar trebui dezactivate; procesul pare unul foarte complicat și anevoios
+  - cu alte cuvinte, dacă nu știi de chichițele cu licențele, folosești fără să vrei/știi facilități premium fără licență, iar apoi vin să te controleze și te amendează
+- EE (enterprise edition): licențe pe și mai mulți bani
 
-select * from dba_feature_usage_statistics;
+<p align=center>
+  <a href="https://user-images.githubusercontent.com/23401453/190024309-0da4d6ef-2fa7-41e0-a5ac-2190a1d931bf.png">
+    <img src="https://user-images.githubusercontent.com/23401453/190024213-4948b69c-16d5-41c6-a5c4-f7fb7c8043ba.png" alt="big tech company org charts"/>
+  </a>
+</p>
+<p align=right><a href="https://images.fastcompany.net/image/upload/fc/3046512-inline-3-organizationalcharts.png">(sursa imaginii)</a></p>
 
-show parameter control_management;
+Noi folosim varianta XE pentru că celelalte variante ocupă mult prea mult spațiu și oricum nu ne interesează facilitățile în plus.
+În mod curios, pe XE mai noi sunt incluse facilități premium care nu sunt disponibile în SE.
 
-
-show parameter statistics_level;
-
-col name format A30
-col detected format 9999
-col samples format 9999
-col used format A5
-col interval format 9999999
-
-SELECT name,
-       detected_usages detected,
-                 total_samples   samples,
-                 currently_used  used,
-                 to_char(last_sample_date,'MMDDYYYY:HH24:MI') last_sample,
-                 sample_interval interval
-FROM dba_feature_usage_statistics
-WHERE name = 'Automatic Workload Repository';
-
-col name format A31
-col detected format 9999
-col samples format 9999
-col used format A5
-col interval format 9999999
-
-SELECT name,       
-       detected_usages detected,
-       total_samples   samples,
-       currently_used  used,
-       to_char(last_sample_date,'MMDDYYYY:HH24:MI') last_sample,
-       sample_interval interval
-  FROM dba_feature_usage_statistics
- WHERE name = 'Automatic Workload Repository'     OR  name like 'SQL%';
-
-show parameter control_management_pack_access;
-
-select client_name, operation_name, status from dba_autotask_operation;
-
-BEGIN
-  dbms_auto_task_admin.disable(
-    client_name => 'sql tuning advisor',
-    operation   => NULL,
-    window_name => NULL);
-
-  dbms_auto_task_admin.disable(
-    client_name => 'auto space advisor',
-    operation   => NULL,
-    window_name => NULL);
-
-END;
-/
-
-
-set pages 999
-
-col c1 heading 'feature'    format a45
-col c2 heading 'times|used' format 999,999
-col c3 heading 'first|used'
-col c4 heading 'used|now'
-
-select
-   name             c1,
-   detected_usages  c2,
-   first_usage_date c3,
-   currently_used   c4
-from
-   dba_feature_usage_statistics
-where
-   first_usage_date is not null;
-
-select 1 from dual;
+Din ce înțeleg, putem identifica (o parte) din aceste facilități cu următoarea cerere:
+```sql
+SELECT PARAMETER name, value
+FROM "v$option" vo
+ORDER BY 2 DESC, 1;
 ```
 
-On the faculty DB, we do not have admin rights:
+Rezultatul (trunchiat) pe XE 21.3 este:
 ```
-DESC dba_feature_usage_statistics;
-
-show parameter control_management;
+NAME                        VALUE
+---------------------------------
+Adaptive Execution Plans    TRUE
+Advanced Analytics          TRUE
+...
+XStream                     TRUE
+Zone Maps                   TRUE
+ASM Proxy Instance          FALSE
+Active Data Guard           FALSE
+...
+Streams Capture             FALSE
+Unified Auditing            FALSE
 ```
 
-These result in:
-```
-SP2-0749: Cannot resolve circular path of synonym "dba_feature_usage_statistics"
-Show parameters query failed 
-```
+Referitor la performanța SGBD-urilor closed-source (nu doar Oracle), este împotriva termenilor și condițiilor să publicăm [benchmarks](https://stackoverflow.com/a/12116865).
 
-Misc stuff:
-- it seems to be against T&C to publish benchmarks: https://stackoverflow.com/a/12116865 🙊
+### Setup Microsoft SQL Server
 
-- recommended for sql developer tips:
-  - https://www.thatjeffsmith.com/archive/2012/05/getting-started-with-sql-developer-less-than-5-minutes/
+Detalii despre imagine aici: https://hub.docker.com/_/microsoft-mssql-server
 
-
-### MS SQL Server setup
-
-See details here: https://hub.docker.com/_/microsoft-mssql-server
-
+Din terminal:
 ```
 $ podman pull mcr.microsoft.com/mssql/server:2019-latest
-$ podman create --name=mssql-xe-container -p 1433:1433 -e "SA_PASSWORD=admin_pass1" -e "ACCEPT_EULA=Y" -e "MSSQL_PID=Express" -v mssql-volume:/var/opt/mssql/data mssql/server:2019-latest
+$ podman create --name=mssql-xe-container \
+                -p 1433:1433 \
+                -e "SA_PASSWORD=admin_pass1" \
+                -e "ACCEPT_EULA=Y" \
+                -e "MSSQL_PID=Express" \
+                -v mssql-volume:/var/opt/mssql/data \
+                mssql/server:2019-latest
 $ podman start -ia mssql-xe-container
 ```
 
 Este necesar să dăm fiecare privilegiu separat. La fel ca mai sus, dorim să ne
 creăm o bază de date separată și un user cu mai puține privilegii.
 
+Din clientul SQL:
 ```sql
 SELECT @@version;
 
 CREATE DATABASE test_db;
 
--- only once
-CREATE LOGIN seria35
+-- o singură dată
+CREATE LOGIN seria36
 WITH PASSWORD = 'M$_login1', CHECK_POLICY = OFF;
 
 USE test_db;
 
--- for each db
-CREATE USER seria35
-FOR LOGIN seria35;
+-- pentru fiecare DB/schemă în parte trebuie comenzile de mai jos
+CREATE USER seria36
+FOR LOGIN seria36;
 
-GRANT EXECUTE TO seria35;
-GRANT ALTER ON SCHEMA::dbo TO seria35;
---GRANT CREATE DATABASE TO seria35;
-GRANT CREATE TABLE TO seria35;
-GRANT REFERENCES TO seria35;
-GRANT INSERT TO seria35;
-GRANT UPDATE TO seria35;
-GRANT SELECT TO seria35;
-GRANT DELETE TO seria35;
+GRANT EXECUTE TO seria36;
+GRANT ALTER ON SCHEMA::dbo TO seria36;
+--GRANT CREATE DATABASE TO seria36;
+GRANT CREATE TABLE TO seria36;
+GRANT REFERENCES TO seria36;
+GRANT INSERT, SELECT, UPDATE, DELETE ON SCHEMA::dbo TO seria36;
 
---GRANT ALL TO seria35; -- deprecated
---REVOKE ALL TO seria35;
+--GRANT ALL TO seria36; -- deprecated
+--REVOKE ALL TO seria36;
 
 -- cleanup
 USE master;
 
-DROP USER grupa351;
-DROP LOGIN grupa351;
+DROP USER seria36;
+DROP LOGIN grupa36;
 DROP DATABASE test_db;
 ```
 
-### MariaDB
+La fel ca toate produsele Microsoft, SQL Server se bazează (prea mult) pe interfața grafică (GUI),
+ceea ce face anevoios procesul de configurare fără GUI (nu mai vorbim de automatizare).
+Conform documentației, SQL Server pare să ofere posibilitatea unui user să aibă mai multe scheme, însă acordarea permisiunilor este un chin.
 
+### Setup MariaDB
+
+MariaDB este un fork din MySQL și pentru ce avem noi nevoie le vom considera echivalente.
+Prefer MariaDB în detrimentul MySQL deoarece MySQL este cumpărat de Oracle și ne ajunge o bază de date Oracle.
+
+Din terminal:
 ```
 $ podman pull docker.io/mariadb:10.9
-$ podman create --name=mariadb-container -p 3306:3306 -e "MARIADB_ROOT_PASSWORD=my-secret-pw" -e "MARIADB_DATABASE=test_db" -e "MARIADB_USER=seria35" -e "MARIADB_PASSWORD=mariadb_pw" -v mariadb-volume:/var/lib/mysql mariadb:10.9
+$ podman create --name=mariadb-container \
+                -p 3306:3306 \
+                -e "MARIADB_ROOT_PASSWORD=my-secret-pw" \
+                -e "MARIADB_DATABASE=test_db" \
+                -e "MARIADB_USER=seria35" \
+                -e "MARIADB_PASSWORD=mariadb_pw" \
+                -v mariadb-volume:/var/lib/mysql \
+                mariadb:10.9
 $ podman start -ia mariadb-container
 # stop with
 $ podman stop mariadb-container
 ```
 
+Din clientul SQL:
 ```sql
-SHOW GRANTS FOR seria35;
-GRANT ALL PRIVILEGES ON hr.* TO seria35;
+SHOW GRANTS FOR seria36;
+GRANT ALL PRIVILEGES ON hr.* TO seria36;
 ```
 
-Alternative images: https://hub.docker.com/r/yobasystems/alpine-mariadb
+În MariaDB/MySQL, un user nu poate avea mai multe scheme, dar poate accesa cu o conexiune tabele din mai multe baze de date.
 
-### PostgreSQL
+Pentru imagini alpine (neoficiale): https://hub.docker.com/r/yobasystems/alpine-mariadb
 
+### Setup PostgreSQL
+
+Din terminal:
 ```
 $ podman pull docker.io/postgres:14.5-alpine
-$ podman create --name=postgres-container -p 5432:5432 -e "POSTGRES_PASSWORD=pg-password" -v pg-volume:/var/lib/postgresql/data postgres:14.5-alpine
+$ podman create --name=postgres-container \
+                -p 5432:5432 \
+                -e "POSTGRES_PASSWORD=pg-password" \
+                -v pg-volume:/var/lib/postgresql/data \
+                postgres:14.5-alpine
 $ podman start -ia postgres-container
 ```
 
-Admin:
-
+Din clientul SQL ca admin:
 ```sql
-CREATE USER seria35 WITH PASSWORD 'Pg=passwd2!';
+CREATE USER seria36 WITH PASSWORD 'Pg=passwd2!';
 CREATE DATABASE pbd;
-GRANT ALL PRIVILEGES ON DATABASE pbd TO seria35;
+GRANT ALL PRIVILEGES ON DATABASE pbd TO seria36;
 
 -- cleanup
 DROP DATABASE pbd;
-DROP USER seria35;
+DROP USER seria36;
 ```
 
-User:
+Din clientul SQL ca user simplu:
 ```sql
-select count(*) from employees e ;
+SELECT COUNT(*) FROM employees e ;
 
 --CREATE SCHEMA test_schema;
 --SHOW search_path;
 
 SET search_path TO public;
-select count(*) from employees e ;
+SELECT COUNT(*) FROM employees e ;
 SHOW search_path;
 ```
 
+În PostgreSQL, un user poate avea mai multe scheme, dar implicit nu poate accesa cu o conexiune tabele din mai multe baze de date.
+
+### Setup SQLite
+
+Nu este nimic de configurat. SQLite este o bază de date la nivel de fișier.
+Baza de date cu totul este un singur fișier. Interacțiunea se face cu ajutorul unor biblioteci.
+
+Având în vedere că toată baza de date este un singur fișier, nu există conceptul de utilizatori.
+Sarcina acordării drepturilor revine sistemului de operare sau aplicațiilor care interacționează cu baza de date.
+
+Din clientul SQL, singurul lucru pe care trebuie să îl facem este să selectăm fișierul cu baza de date.
