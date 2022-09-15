@@ -341,13 +341,13 @@ Din clientul SQL:
 ```sql
 SELECT @@version;
 
-CREATE DATABASE test_db;
+-- CREATE DATABASE hr; -- creăm baza de date cu scriptul din repo
 
 -- o singură dată
 CREATE LOGIN seria36
 WITH PASSWORD = 'M$_login1', CHECK_POLICY = OFF;
 
-USE test_db;
+USE hr;
 
 -- pentru fiecare DB/schemă în parte trebuie comenzile de mai jos
 CREATE USER seria36
@@ -359,6 +359,7 @@ GRANT ALTER ON SCHEMA::dbo TO seria36;
 GRANT CREATE TABLE TO seria36;
 GRANT REFERENCES TO seria36;
 GRANT INSERT, SELECT, UPDATE, DELETE ON SCHEMA::dbo TO seria36;
+GRANT SHOWPLAN TO seria36;
 
 --GRANT ALL TO seria36; -- deprecated
 --REVOKE ALL TO seria36;
@@ -368,7 +369,7 @@ USE master;
 
 DROP USER seria36;
 DROP LOGIN grupa36;
-DROP DATABASE test_db;
+DROP DATABASE hr;
 ```
 
 La fel ca toate produsele Microsoft, SQL Server se bazează (prea mult) pe interfața grafică (GUI),
@@ -386,8 +387,8 @@ $ podman pull docker.io/mariadb:10.9
 $ podman create --name=mariadb-container \
                 -p 3306:3306 \
                 -e "MARIADB_ROOT_PASSWORD=my-secret-pw" \
-                -e "MARIADB_DATABASE=test_db" \
-                -e "MARIADB_USER=seria35" \
+                -e "MARIADB_DATABASE=hr" \
+                -e "MARIADB_USER=seria36" \
                 -e "MARIADB_PASSWORD=mariadb_pw" \
                 -v mariadb-volume:/var/lib/mysql \
                 mariadb:10.9
@@ -438,6 +439,7 @@ SELECT COUNT(*) FROM employees e ;
 --SHOW search_path;
 
 SET search_path TO public;
+-- SET search_path TO test_schema;
 SELECT COUNT(*) FROM employees e ;
 SHOW search_path;
 ```

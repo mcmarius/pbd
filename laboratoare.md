@@ -66,13 +66,17 @@ Interogări:
   <pre lang="sql">
     EXPLAIN
     SELECT *
+    FROM employees;
+
+    ANALYZE
+    SELECT *
     FROM employees;  </pre>
 </details>
 
 <details>
 <summary>SQL Server
   (documentație
-  <a href="https://docs.microsoft.com/en-us/sql/t-sql/queries/explain-transact-sql">aici</a>
+  <a href="https://docs.microsoft.com/en-us/sql/relational-databases/performance/execution-plans">aici</a>
   și
   <a href="https://docs.microsoft.com/en-us/sql/t-sql/statements/set-showplan-all-transact-sql">aici</a>)
 </summary>
@@ -81,9 +85,10 @@ Interogări:
     -- sau
     -- SET SHOWPLAN_TEXT ON;
     SET NOEXEC ON;
-    EXPLAIN
+
     SELECT *
     FROM employees;
+
     SET NOEXEC OFF;
     SET SHOWPLAN_ALL OFF;
     -- SET SHOWPLAN_TEXT OFF;  </pre>
@@ -97,9 +102,11 @@ Interogări:
     EXPLAIN
     SELECT *
     FROM employees;
+
     EXPLAIN ANALYZE
     SELECT *
     FROM employees;
+
     EXPLAIN (ANALYZE, BUFFERS)
     SELECT *
     FROM employees;      </pre>
