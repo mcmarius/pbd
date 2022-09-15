@@ -63,6 +63,7 @@ Interogări:
   iar pentru MySQL
   <a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html">aici</a>)
 </summary>
+
   <pre lang="sql">
     EXPLAIN
     SELECT *
@@ -80,6 +81,7 @@ Interogări:
   și
   <a href="https://docs.microsoft.com/en-us/sql/t-sql/statements/set-showplan-all-transact-sql">aici</a>)
 </summary>
+
   <pre lang="sql">
     SET SHOWPLAN_ALL ON;
     -- sau
@@ -98,6 +100,7 @@ Interogări:
 <summary>PostgreSQL
   (documentație <a href="https://www.postgresql.org/docs/current/sql-explain.html">aici</a>)
 </summary>
+
   <pre lang="sql">
     EXPLAIN
     SELECT *
@@ -116,6 +119,7 @@ Interogări:
 <summary>SQLite
   (documentație <a href="https://www.sqlite.org/eqp.html">aici</a>)
 </summary>
+
   <pre lang="sql">
     EXPLAIN QUERY PLAN
     SELECT *
