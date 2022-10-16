@@ -243,7 +243,7 @@ MySQL pare un pic mai limitat la acest capitol față de MariaDB. Probabil că O
     END;  </pre>
   Este necesară acordarea de către admin a dreptului <code>FILE</code>: <code>GRANT FILE ON *.* TO seria36;</code>, iar apoi restart la server.
 <br>
-  Nu îmi este clar din documentație dacă se poate mai ok altfel.
+  Nu îmi este clar din documentație dacă se poate mai ok altfel. Altă variantă este cu setarea variabilei <code>SET SQL_MODE='ORACLE';</code> (detalii <a href="https://mariadb.com/kb/en/sql_modeoracle/">aici</a>) și cod de PL/SQL din Oracle.
 </details>
 
 #### Exemplu mai elaborat
@@ -252,22 +252,90 @@ MySQL pare un pic mai limitat la acest capitol față de MariaDB. Probabil că O
 <summary>Oracle</summary>
   <pre lang="sql">
     DECLARE
-        x int := NULL;
+        x int := 2; -- nu merge cu = simplu la atribuiri
+        j int;
+        nume employees.first_name%TYPE;
+        ang employees%ROWTYPE;
     BEGIN
         SELECT COUNT(*)
         INTO x
         FROM EMPLOYEES e;
         --WHERE 1 = 0;
-        --CREATE TABLE tbl(id int);
-        --DROP TABLE tbl;
-        DBMS_OUTPUT.PUT_LINE('Hello, world!');
-        IF x > 0 THEN
-           DBMS_OUTPUT.PUT_LINE('x este ' || x);
+        --
+        IF x < 0 THEN
+            DBMS_OUTPUT.PUT_LINE('x este ' || x);
+        ELSIF x > 1 THEN
+            -- nu avem ELSEIF în Oracle
+            DBMS_OUTPUT.PUT_LINE('x chiar este ' || x);
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('altceva');
         END IF;
+        --
+        CASE x
+        WHEN 2 THEN DBMS_OUTPUT.PUT_LINE('2');
+        WHEN 1 THEN DBMS_OUTPUT.PUT_LINE('1');
+        ELSE        DBMS_OUTPUT.PUT_LINE('case 1 altceva');
+        END CASE;
+        --
+        CASE
+        WHEN x > 4 THEN          DBMS_OUTPUT.PUT_LINE('4');
+        WHEN MOD(x, 3) <> 1 THEN DBMS_OUTPUT.PUT_LINE('3');
+        ELSE                     DBMS_OUTPUT.PUT_LINE('case 2 altceva');
+        END CASE;
+        --
+        -- eroare: TOO_MANY_ROWS
+        -- SELECT first_name
+        -- INTO nume
+        -- FROM employees;
+        -- DBMS_OUTPUT.PUT_LINE('numele este ' || nume);
+        --
+        SELECT first_name
+        INTO nume
+        FROM employees
+        WHERE employee_id = 123;
+        DBMS_OUTPUT.PUT_LINE('numele este ' || nume);
+        --
+        -- eroare: NO_DATA_FOUND
+        -- SELECT first_name
+        -- INTO nume
+        -- FROM employees
+        -- WHERE employee_id = 0;
+        -- DBMS_OUTPUT.PUT_LINE('numele este ' || nume);
+        --
+        SELECT *
+        INTO ang
+        FROM employees
+        WHERE employee_id = 123;
+        DBMS_OUTPUT.PUT_LINE(
+            'numele: ' || ang.first_name ||
+            ', salariul: ' || ang.salary
+        );
+        --
+        -- comenzile DDL nu merg în Oracle
+        -- CREATE TABLE IF NOT EXISTS tbl(id int);
+        -- DROP TABLE tbl;
+        --
+        -- incrementare/decrementare doar cu pas 1
         FOR i IN 1..x LOOP
             CONTINUE WHEN i < 2;
-            EXIT WHEN i > 3;
-            DBMS_OUTPUT.PUT_LINE(i);
+            EXIT WHEN i > 7;
+            DBMS_OUTPUT.PUT_LINE('for loop i: ' || i || ' ' || sysdate);
+        END LOOP;
+        --
+        FOR i IN REVERSE 1..5 LOOP
+            DBMS_OUTPUT.PUT_LINE('forr loop i: ' || i);
+        END LOOP;
+        --
+        j := 0;
+        LOOP
+            j := j + 3;
+            EXIT WHEN j > 8;
+            DBMS_OUTPUT.PUT_LINE('loop j: ' || j);
+        END LOOP;
+        --
+        WHILE j > 0 LOOP
+            j := j - 2;
+            DBMS_OUTPUT.PUT_LINE('while loop j: ' || j);
         END LOOP;
     END;  </pre>
 </details>
@@ -277,24 +345,90 @@ MySQL pare un pic mai limitat la acest capitol față de MariaDB. Probabil că O
   <pre lang="sql">
     DO $$
     DECLARE
-        x int = 2;
+        x int = 2; -- sau cu :=
+        j int;
+        nume employees.first_name%TYPE;
+        ang employees%ROWTYPE;
     BEGIN
         SELECT COUNT(*)
         INTO x
         FROM EMPLOYEES e;
         --WHERE 1 = 0;
-        RAISE NOTICE 'Hello, world!';
-        IF x > 0 THEN
+        --
+        IF x < 0 THEN
             RAISE NOTICE 'x este %', x;
+        ELSEIF x > 1 THEN
+            -- sau ELSIF pentru compatibilitate cu Oracle
+            RAISE NOTICE 'x chiar este %', x;
+        ELSE
+            RAISE NOTICE 'altceva';
         END IF;
-        CREATE TABLE tbl(id int);
+        --
+        CASE x
+        WHEN 2 THEN RAISE NOTICE '2';
+        WHEN 1 THEN RAISE NOTICE '1';
+        ELSE        RAISE NOTICE 'case 1 altceva';
+        END CASE;
+        --
+        CASE
+        WHEN x > 4 THEN          RAISE NOTICE '4';
+        WHEN MOD(x, 3) <> 1 THEN RAISE NOTICE '3';
+        ELSE                     RAISE NOTICE 'case 2 altceva';
+        END CASE;
+        --
+        -- ia primul rând
+        SELECT first_name
+        INTO nume
+        FROM employees;
+        RAISE NOTICE 'numele este %', nume;
+        --
+        SELECT first_name
+        INTO nume
+        FROM employees
+        WHERE employee_id = 123;
+        RAISE NOTICE 'numele este %', nume;
+        --
+        -- setează variabila cu NULL
+        SELECT first_name
+        INTO nume
+        FROM employees
+        WHERE employee_id = 0;
+        RAISE NOTICE 'numele este %', nume;
+        --
+        SELECT *
+        INTO ang
+        FROM employees
+        WHERE employee_id = 123;
+        RAISE NOTICE 'numele: %, salariul: %',
+                     ang.first_name, ang.salary;
+        --
+        -- comenzile DDL merg în Postgres
+        CREATE TABLE IF NOT EXISTS tbl(id int);
         DROP TABLE tbl;
+        --
         FOR i IN 1..x BY 2 LOOP
             CONTINUE WHEN i < 2;
             EXIT WHEN i > 8;
-            RAISE NOTICE '%, %', i, now();
+            RAISE NOTICE 'for loop i: %, %', i, now();
         END LOOP;
-    END $$; </pre>
+        --
+        -- la for reverse, limitele nu sunt ca în Oracle
+        FOR i IN REVERSE 5..1 LOOP
+            RAISE NOTICE 'forr loop i: %', i;
+        END LOOP;
+        --
+        j = 0;
+        LOOP
+            j = j + 1;
+            EXIT WHEN j > 4;
+            RAISE NOTICE 'loop j: %', j;
+        END LOOP;
+        --
+        WHILE j > 0 LOOP
+            j = j - 1;
+            RAISE NOTICE 'while loop j: %', j;
+        END LOOP;
+    END $$;  </pre>
 </details>
 
 <details>
@@ -317,11 +451,154 @@ MySQL pare un pic mai limitat la acest capitol față de MariaDB. Probabil că O
 
 ## Laborator 3 - colecții
 
-Tabelele imbricate pot fi emulate cu tabele temporare.
+#### Tipuri de date noi
+
+Unele baze de date ne permit definirea de noi tipuri de date, asemănător cu structurile din C.
+Nu putem avea câmpuri cu `%TYPE` (sau `%ROWTYPE`). În Oracle, deși nu crapă la crearea tipului, primim erori ulterior.
+
+Observăm că aceste tipuri de date pot fi folosite atât în SQL, cât și în limbaj procedural.
+
+<details>
+<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/lnpls/CREATE-TYPE-statement.html">aici</a>)</summary>
+  <pre lang="sql">
+    CREATE OR REPLACE TYPE tip_test AS OBJECT (
+        id int,
+        nume VARCHAR2(50)
+    );
+    --
+    DROP TYPE tip_test;
+    --
+    SELECT tip_test(1, 't') FROM dual;
+    --
+    DECLARE
+        emp1 tip_test;
+        emp2 tip_test := tip_test(0, '');
+    BEGIN
+        -- în această variantă trebuie apelat constructorul
+        SELECT tip_test(employee_id, first_name)
+        INTO emp1
+        FROM EMPLOYEES
+        WHERE EMPLOYEE_ID = 123;
+        --
+        -- dacă specificăm câmpurile explicit, variabila trebuie inițializată înainte
+        SELECT employee_id, FIRST_NAME
+        INTO emp2.id, emp2.nume
+        FROM EMPLOYEES
+        WHERE EMPLOYEE_ID = 123;
+        --
+        DBMS_OUTPUT.PUT_LINE(emp1.id || ' ' || emp1.nume);
+    END;  </pre>
+</details>
+
+<details>
+<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createtype.html">aici</a>)</summary>
+  <pre lang="sql">
+    CREATE TYPE tip_test AS (
+        id int,
+        nume varchar
+    );
+    --COMMIT;
+    --
+    DROP TYPE tip_test;
+    --
+    SELECT (1, 't')::tip_test;
+    --
+    DO $$
+    DECLARE
+        emp1 tip_test;
+        emp2 tip_test; -- := (0, 'n/a')::tip_test;
+    BEGIN
+        -- nu este nevoie și nici nu merge cu cast
+        SELECT employee_id, first_name
+        INTO emp1
+        FROM EMPLOYEES e
+        WHERE EMPLOYEE_ID = 123;
+        --
+        SELECT employee_id, first_name
+        INTO emp2.id, emp2.nume
+        FROM EMPLOYEES
+        WHERE EMPLOYEE_ID = 123;
+        --
+        RAISE NOTICE '% %', emp1.id, emp1.nume;
+        RAISE NOTICE '% %', emp2.id, emp2.nume;
+    END $$;  </pre>
+</details>
+
+SQL Server nu are un echivalent pentru `CREATE TYPE` ca cele de mai sus ([sursa](https://learn.microsoft.com/en-us/sql/t-sql/statements/create-type-transact-sql)).
+Pot fi create tipuri de date asociate cu clase din .NET.
+
+În MyQL/MariaDB nu este implementat deloc `CREATE TYPE` ([sursa](https://stackoverflow.com/questions/10266101/create-type-on-mysql)).
+
+Se poate emula cu `CREATE TABLE` sau cu JSON.
+
+#### Tablouri indexate
+
+Tablourile indexate există doar în PL/SQL. Nu pot fi folosite în SQL.
+
+#### Vectori de lungime fixă
+
+Vectorii pot fi folosiți atât în SQL, cât și în limbaj procedural.
+
+Oracle permite definirea unor vectori de lungime fixă.
+
+În PostgreSQL, se poate crea ad-hoc un tip de date `ARRAY` de dimensiune variabilă pentru orice tip de date definit.
+Dimensiunea nu trebuie specificată în prealabil ([sursa](https://www.postgresql.org/docs/current/arrays.html)).
+
+În SQL Server poate fi folosit în schimb `TABLE`.
+
+MySQL/MariaDB nu implementează arrays. Pot fi emulați cu tabele temporare sau cu JSON.
+
+#### Tablouri imbricate
+
+Tablourile imbricate pot fi emulate cu tabele temporare. Acestea există în SQL și în limbaj procedural.
+
+<details>
+<summary>Oracle</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        NULL;
+    END;  </pre>
+</details>
+
+<details>
+<summary>PostgreSQL</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+    END;  </pre>
+</details>
+
+<details>
+<summary>SQL Server</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
+<details>
+<summary>MariaDB</summary>
+  <pre lang="sql">
+    BEGIN NOT ATOMIC
+        -- TBA
+    END;  </pre>
+</details>
 
 ## Laborator 4 - colecții
+
+TBA benchmarks. De văzut cu `t1 number := DBMS_UTILITY.get_time;`.
+
 ## Laborator 5 - cursoare
 ## Laborator 6 - cursoare
 ## Laborator 7 - funcții și proceduri
+
+#### Pachete
+
+Avem pachete (asemănătoare cu spațiile de nume din C++ și C#) în Oracle și [MariaDB](https://mariadb.com/kb/en/create-package/).
+În PostgreSQL și [SQL Server](https://stackoverflow.com/questions/27833885/create-packages-in-sql-server-management-studio-without-ssis),
+pachetele pot fi emulate cu ajutorul schemelor.
+
 ## Laborator 8 - declanșatori
 ## Laborator 9 - declanșatori
