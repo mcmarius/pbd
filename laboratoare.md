@@ -435,8 +435,88 @@ MySQL pare un pic mai limitat la acest capitol față de MariaDB. Probabil că O
 <summary>SQL Server</summary>
   <pre lang="sql">
     BEGIN
-        -- TBA
-        RETURN;
+        -- instrucțiunile DECLARE pot fi și în afara blocurilor BEGIN/END
+        DECLARE @x int,
+                @j int;
+        DECLARE @nume VARCHAR(20);
+        -- nu avem (echivalent) %TYPE sau %ROWTYPE în SQL Server
+        -- nume employees.first_name%TYPE;
+        -- ang employees%ROWTYPE;
+        --
+        -- exemplu SELECT în variabilă
+        SET @x = (SELECT COUNT(*)
+        FROM EMPLOYEES e
+        -- WHERE 1 = 0
+        );
+        PRINT @x;
+        --
+        -- exemplu IF/ELSE
+        IF @x < 0 -- nu avem THEN
+            PRINT 'x este ' + ltrim(str(@x));
+        ELSE
+        BEGIN
+            IF @x > 1
+                -- nu avem ELSEIF/ELSIF/ELIF în SQL Server
+                PRINT 'x chiar este ' + ltrim(str(@x));
+            ELSE
+                PRINT 'altceva';
+        END; -- nu avem END IF
+        --
+        -- CASE merge doar în SELECT, nu și pentru instrucțiuni condiționale
+        -- https://learn.microsoft.com/en-us/sql/t-sql/language-elements/case-transact-sql?view=sql-server-ver16#remarks
+        --
+        -- eroare: Subquery returned more than 1 value. This is not permitted when...
+        -- SET @nume = (SELECT first_name
+        -- FROM employees);
+        -- PRINT 'numele este ' + @nume;
+        --
+        SET @nume = (SELECT first_name
+        FROM employees
+        WHERE employee_id = 123);
+        PRINT 'numele este ' + @nume;
+        --
+        -- merge, dar variabila devine NULL dacă nu avem rânduri
+        SET @nume = (SELECT first_name
+        FROM employees
+        WHERE employee_id = 0);
+        -- fără COALESCE, întregul string se convertește la NULL și se afișează un rând gol
+        PRINT 'numele este ' + COALESCE(@nume, '<null>');
+        --
+        -- nu avem echivalent de %ROWTYPE în SQL Server
+        -- https://stackoverflow.com/questions/4022460/
+        --
+        -- comenzile DDL merg în SQL Server
+        IF NOT EXISTS (
+            SELECT *
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_NAME = N'tbl'
+        )
+        BEGIN
+            CREATE TABLE tbl(id int);
+            DROP TABLE tbl;
+        END;
+        --
+        -- nu există FOR LOOP în SQL Server
+        -- nu există LOOP/END LOOP
+        -- nu există DO-WHILE LOOP
+        -- există GOTO
+        -- https://stackoverflow.com/questions/6069024/
+        -- https://learn.microsoft.com/en-us/sql/t-sql/language-elements/while-transact-sql
+        --
+        SET @j = 0;
+        WHILE @j <= 12
+        BEGIN
+            SET @j = @j + 3;
+            PRINT 'asc while loop j: ' + ltrim(str(@j));
+            IF @j > 8
+                BREAK;
+        END;
+        --
+        WHILE @j > 0 
+        BEGIN
+            SET @j = @j - 2;
+            PRINT 'desc while loop j: ' + ltrim(str(@j));
+        END;
     END;  </pre>
 </details>
 
