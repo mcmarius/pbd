@@ -524,7 +524,130 @@ MySQL pare un pic mai limitat la acest capitol față de MariaDB. Probabil că O
 <summary>MariaDB</summary>
   <pre lang="sql">
     BEGIN NOT ATOMIC
-        -- TBA
+        -- întâi avem toate instrucțiunile de declare
+        -- comentariile obligatoriu trebuie să aibă spațiu după --
+        -- DECLARE stdout TEXT;  -- buffer pt simulat funcție de afișare
+        DECLARE x DOUBLE;
+        DECLARE j INT;
+        -- doar în MariaDB >= 10.3; în MySQL nu avem așa ceva
+        -- https://mariadb.com/kb/en/declare-variable/
+        -- https://dev.mysql.com/doc/refman/8.1/en/declare-local-variable.html
+        DECLARE nume TYPE OF employees.first_name;
+        DECLARE ang ROW TYPE OF employees;
+        -- .
+        -- https://stackoverflow.com/questions/273437/how-do-you-debug-mysql-stored-procedures
+        -- DROP TABLE logs;
+        CREATE TABLE IF NOT EXISTS logs (
+            ts TIMESTAMP DEFAULT current_timestamp,
+        msg VARCHAR(2048)
+        ) ENGINE = myisam;
+        TRUNCATE TABLE logs;
+        -- SET stdout = '';
+        SET x = 2; -- merge și cu :=
+        -- exemplu SELECT în variabilă
+        SELECT COUNT(*)
+        INTO x
+        FROM employees e;
+        -- WHERE 1 = 0;
+        -- .
+        -- exemplu IF/ELSE
+        IF x < 0 THEN
+            -- SET stdout = CONCAT(stdout, 'x este ', x, '\n');
+            INSERT INTO logs (msg) VALUES(CONCAT('x este ', x));
+        ELSEIF x > 1 THEN
+            -- nu avem ELSIF în MariaDB/MySQL
+            -- SET stdout = CONCAT(stdout, 'x chiar este ', x, '\n');
+            INSERT INTO logs (msg) VALUES(CONCAT('x chiar este ', x));
+        ELSE
+            -- SET stdout = CONCAT(stdout, 'altceva', '\n');
+            INSERT INTO logs (msg) VALUES('altceva');
+        END IF;
+        -- .
+        -- https://mariadb.com/kb/en/case-statement/
+        -- exemplu CASE
+        CASE x
+        WHEN 2 THEN 
+                    INSERT INTO logs (msg) VALUES('2');
+        WHEN 1 THEN INSERT INTO logs (msg) VALUES('1');
+        ELSE        INSERT INTO logs (msg) VALUES('case 1 altceva');
+        END CASE;
+        -- .
+        CASE
+        WHEN x > 4 THEN          INSERT INTO logs (msg) VALUES('4');
+        WHEN MOD(x, 3) <> 1 THEN INSERT INTO logs (msg) VALUES('3');
+        ELSE                     INSERT INTO logs (msg) VALUES('case 2 altceva');
+        END CASE;
+        -- eroare: Result consisted of more than one row
+        -- SELECT first_name
+        -- INTO nume
+        -- FROM employees;
+        -- .
+        SELECT first_name
+        INTO nume
+        FROM employees
+        WHERE employee_id = 123;
+        INSERT INTO logs (msg) VALUES(CONCAT('numele este ', nume));
+        -- .
+        -- dacă nu avem rezultate, variabila nu se modifică
+        -- rămâne valoarea setată anterior
+        SELECT first_name
+        INTO nume
+        FROM employees
+        WHERE employee_id = 0;
+        INSERT INTO logs (msg) VALUES(CONCAT('numele este ', nume));
+        -- .
+        SELECT *
+        INTO ang
+        FROM employees
+        WHERE employee_id = 123;
+        INSERT INTO logs(msg) VALUES (
+            CONCAT('numele: ', ang.first_name,
+            ', salariul: ', ang.salary)
+        );
+        -- .
+        -- comenzile DDL merg în MariaDB
+        CREATE TABLE IF NOT EXISTS tbl(id INT);
+        DROP TABLE IF EXISTS tbl;
+        -- .
+        -- MySQL are doar LOOP, REPEAT/UNTIL și WHILE
+        -- ITERATE echivalent cu CONTINUE
+        -- LEAVE echivalent cu BREAK
+        -- https://dev.mysql.com/doc/refman/8.1/en/loop.html
+        -- .
+        -- MariaDB >= 10.3 are în plus bucle FOR
+        -- https://mariadb.com/kb/en/for/
+        -- .
+        -- incrementare/decrementare doar cu pas 1
+        for1:
+        FOR i IN 1..x DO
+            IF i < 2 THEN ITERATE for1; END IF;
+            IF i > 7 THEN LEAVE for1; END IF;
+            INSERT INTO logs (msg) VALUES(CONCAT('for loop i: ', i, ' ', SYSDATE()));
+        END FOR for1;
+        -- .
+        FOR i IN REVERSE 1..5 DO
+            INSERT INTO logs (msg) VALUES(CONCAT('forr loop i: ', i));
+        END FOR;
+        -- .
+        SET j = 0;
+        loop2:
+        LOOP
+            SET j = j + 3;
+            IF j > 8 THEN LEAVE loop2; END IF;
+            INSERT INTO logs (msg) VALUES(CONCAT('loop j: ', j));
+        END LOOP loop2;
+        -- .
+        WHILE j > 0 DO
+            SET j = j - 2;
+            INSERT INTO logs (msg) VALUES(CONCAT('while loop j: ', j));
+        END WHILE;
+        -- .
+        REPEAT
+            SET j = j + 4;
+            INSERT INTO logs (msg) VALUES(CONCAT('repeat loop j: ', j));
+        UNTIL j > 10 END REPEAT;
+        -- SELECT stdout;
+        SELECT * FROM logs;
     END;  </pre>
 </details>
 
