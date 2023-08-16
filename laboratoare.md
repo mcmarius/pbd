@@ -262,7 +262,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
     BEGIN
         SELECT COUNT(*)
         INTO x
-        FROM EMPLOYEES e;
+        FROM employees;
         --WHERE 1 = 0;
         --
         IF x < 0 THEN
@@ -355,7 +355,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
     BEGIN
         SELECT COUNT(*)
         INTO x
-        FROM EMPLOYEES e;
+        FROM employees;
         --WHERE 1 = 0;
         --
         IF x < 0 THEN
@@ -384,6 +384,11 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         INTO nume
         FROM employees;
         RAISE NOTICE 'numele este %', nume;
+        --
+        -- eroare
+        -- SELECT first_name
+        -- INTO STRICT nume
+        -- FROM employees;
         --
         SELECT first_name
         INTO nume
@@ -668,7 +673,7 @@ Observăm că aceste tipuri de date pot fi folosite atât în SQL, cât și în 
 <summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/CREATE-TYPE-statement.html">aici</a>)</summary>
   <pre lang="sql">
     CREATE OR REPLACE TYPE tip_test AS OBJECT (
-        id int,
+        id INT,
         nume VARCHAR2(50)
     );
     --
@@ -683,14 +688,14 @@ Observăm că aceste tipuri de date pot fi folosite atât în SQL, cât și în 
         -- în această variantă trebuie apelat constructorul
         SELECT tip_test(employee_id, first_name)
         INTO emp1
-        FROM EMPLOYEES
-        WHERE EMPLOYEE_ID = 123;
+        FROM employees
+        WHERE employee_id = 123;
         --
         -- dacă specificăm câmpurile explicit, variabila trebuie inițializată înainte
-        SELECT employee_id, FIRST_NAME
+        SELECT employee_id, first_name
         INTO emp2.id, emp2.nume
-        FROM EMPLOYEES
-        WHERE EMPLOYEE_ID = 123;
+        FROM employees
+        WHERE employee_id = 123;
         --
         DBMS_OUTPUT.PUT_LINE(emp1.id || ' ' || emp1.nume);
     END;  </pre>
@@ -717,13 +722,13 @@ Observăm că aceste tipuri de date pot fi folosite atât în SQL, cât și în 
         -- nu este nevoie și nici nu merge cu cast
         SELECT employee_id, first_name
         INTO emp1
-        FROM EMPLOYEES e
-        WHERE EMPLOYEE_ID = 123;
+        FROM employees
+        WHERE employee_id = 123;
         --
         SELECT employee_id, first_name
         INTO emp2.id, emp2.nume
-        FROM EMPLOYEES
-        WHERE EMPLOYEE_ID = 123;
+        FROM employees
+        WHERE employee_id = 123;
         --
         RAISE NOTICE '% %', emp1.id, emp1.nume;
         RAISE NOTICE '% %', emp2.id, emp2.nume;
@@ -746,8 +751,8 @@ Se poate emula cu `CREATE TABLE` (eventual temporar) sau cu JSON. JSON poate fi 
   <pre lang="sql">
     DECLARE
         TYPE tip_ang is RECORD (
-            nume    employees.first_name%type,
-            salariu employees.salary%type
+            nume    employees.first_name%TYPE,
+            salariu employees.salary%TYPE
         );
         emp1 tip_ang;
     BEGIN
@@ -802,22 +807,22 @@ DECLARE
 BEGIN
     v_tab(2) := 55;
     v_tab(3) := 56;
-    v_tab(361) := 1323;
-    v_tab(-204) := 666;
+    v_tab(360) := 1323;
+    v_tab(-204) := 654;
 
     i := v_tab.FIRST;
     --WHILE i <> v_tab.LAST + 1 LOOP
     WHILE i IS NOT NULL LOOP
-        dbms_output.put_line(
+        DBMS_OUTPUT.PUT_LINE(
             i || ' ' || v_tab(i)
         );
         i := v_tab.NEXT(i);  -- de ce nu am incrementat?  i := i + 1;
     END LOOP;
-    dbms_output.put_line('i este ' || i || '.');
+    DBMS_OUTPUT.PUT_LINE('i este ' || i || '.');
     IF v_tab.exists(100) THEN
         v_tab.delete(100);
     ELSE
-        dbms_output.put_line('nu avem');
+        DBMS_OUTPUT.PUT_LINE('nu avem');
     END IF;
 END;
 ```
@@ -834,10 +839,10 @@ SELECT vec_numere(1, 2, 6)
 FROM dual;
 
 DECLARE
-    TYPE vec_nr IS varray(10) OF NUMBER;
+    TYPE vec_nr IS VARRAY(10) OF NUMBER;
     v vec_nr := vec_nr(1, 2);
 BEGIN
-    dbms_output.put_line(
+    DBMS_OUTPUT.PUT_LINE(
         'count: ' || v.count || ', ' ||
         'limit: ' || v.limit
     );
@@ -863,7 +868,7 @@ BEGIN
 END $$;
 ```
 
-În SQL Server nu există arrays; în schimb, poate fi folosit `TABLE`.
+În SQL Server nu există arrays; în schimb, poate fi folosit `TABLE` (vezi mai jos).
 
 MySQL/MariaDB nu implementează arrays. Pot fi emulați cu tabele temporare sau cu JSON.
 
@@ -871,8 +876,10 @@ SQLite are [extensii](https://github.com/nalgeon/sqlean/issues/27#issuecomment-1
 
 #### Tablouri imbricate
 
-Tablourile imbricate par să existe doar în Oracle. Acestea există în SQL și în limbaj procedural.
-În alte baze de date, ar putea fi emulate (parțial) cu tipuri de date tablou sau cu tabele temporare.
+Tablourile imbricate par să existe doar în Oracle. Acestea pot fi folosite în SQL și în limbaj procedural.
+
+În alte baze de date, ar putea fi emulate (parțial) cu tipuri de date tablou sau cu tabele temporare, însă avem nevoie și de cunoștințe despre
+cursoare sau funcții.
 O posibilă limitare la tabelele temporare este că trebuie să aibă nume distincte la nivel de sesiune.
 
 <details>
@@ -880,15 +887,15 @@ O posibilă limitare la tabelele temporare este că trebuie să aibă nume disti
   <pre lang="sql">
     DECLARE
         TYPE tab_nr IS TABLE OF NUMBER;
-        v tab_nr := tab_nr(3, 6, 1, 3, 6, 3);
-        j number;
+        v tab_nr := tab_nr(3, 6, 0, 3, 6, 5);
+        j NUMBER;
     BEGIN
-        dbms_output.put_line(
+        DBMS_OUTPUT.PUT_LINE(
             'count: ' || v.count || ', ' ||
             'limit: ' || v.limit
         );
         FOR i IN v.FIRST..v.LAST LOOP
-            dbms_output.put_line('i: ' || i || ', ' ||
+            DBMS_OUTPUT.PUT_LINE('i: ' || i || ', ' ||
                 'v(i): ' || v(i)
             );
         END LOOP;
@@ -899,17 +906,53 @@ O posibilă limitare la tabelele temporare este că trebuie să aibă nume disti
 <details>
 <summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createtable.html">aici</a>)</summary>
   <pre lang="sql">
+    DO $$
+    DECLARE
+        arr NUMERIC[];  -- dezavantaj: nu putem folosi %TYPE cu arrays
     BEGIN
-        -- Tabele temporare
-    END;  </pre>
+        SELECT array_agg(salary)
+        INTO arr
+        FROM employees
+        WHERE department_id = 30;
+        RAISE NOTICE '%', arr;
+        --
+        -- cu tabele temporare
+        CREATE TEMP TABLE tab_nr AS
+        SELECT salary
+        FROM employees
+        WHERE department_id = 30;
+        -- prelucrare rezultate din tab_nr prin cursoare/funcții
+        -- https://stackoverflow.com/a/43832864
+        DROP TABLE tab_nr;
+    END $$;  </pre>
 </details>
 
 <details>
 <summary>SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-table-transact-sql#temporary-tables">aici</a> și <a href="https://learn.microsoft.com/en-us/sql/t-sql/data-types/table-transact-sql">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
-        -- Tabele temporare sau table type
-        RETURN;
+        -- https://learn.microsoft.com/en-us/sql/relational-databases/tables/use-table-valued-parameters-database-engine
+        -- user-defined table types
+        -- nu merge cu select ... into @my_tab
+        DECLARE @my_tab TABLE (salar decimal);
+        INSERT INTO @my_tab
+        SELECT salary
+        FROM employees
+        WHERE department_id = 30;
+        --
+        -- prelucrare rezultate din @my_tab
+        SELECT * FROM @my_tab; -- nu MERGE cu PRINT @my_tab;
+        --
+        -- temp tables: trebuie cu # ca să fie temporar
+        CREATE TABLE #tab_nr(salary decimal);
+        INSERT INTO #tab_nr
+        SELECT salary
+        FROM employees
+        WHERE department_id = 30;
+        --
+        SELECT * FROM #tab_nr;
+        -- prelucrare rezultate din #tab_nr
+        DROP TABLE #tab_nr;
     END;  </pre>
 </details>
 
@@ -917,7 +960,13 @@ O posibilă limitare la tabelele temporare este că trebuie să aibă nume disti
 <summary>MariaDB (documentație <a href="https://mariadb.com/kb/en/create-table/#create-temporary-table">aici</a>)</summary>
   <pre lang="sql">
     BEGIN NOT ATOMIC
-        -- Tabele temporare
+        CREATE TEMPORARY TABLE tab_nr ENGINE=memory
+            SELECT salary
+            FROM employees
+            WHERE department_id = 30;
+        -- prelucrare rezultate din tab_nr
+        SELECT * FROM tab_nr;
+        DROP TABLE tab_nr;
     END;  </pre>
 </details>
 
@@ -1066,7 +1115,6 @@ pachetele pot fi emulate cu ajutorul schemelor.
 Nu există pachete în SQLite, iar schemele înseamnă pur și simplu [fișiere separate](https://www.sqlite.org/lang_attach.html) (`.db`, `.sqlite` sau similar).
 
 ## Laborator 8 - declanșatori
-## Laborator 9 - declanșatori
 
 <details>
 <summary>Oracle (documentație <a href="">aici</a>)</summary>
@@ -1111,3 +1159,6 @@ Nu există pachete în SQLite, iar schemele înseamnă pur și simplu [fișiere 
         RETURN;
     END;  </pre>
 </details>
+
+
+## Laborator 9 - declanșatori
