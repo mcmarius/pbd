@@ -48,16 +48,23 @@ Am folosit imagini oficiale slim pentru Oracle DB Express Edition (XE), dar tot 
 După ce mi-am configurat local Oracle, au apărut și imagini cu tag "faststart", însă nu ne oferă vreun avantaj aici.
 Detalii pe pagina oficială: https://hub.docker.com/r/gvenzl/oracle-xe
 
+Mai nou, Oracle a decis să ofere versiunea 23c complet gratuit, însă nerecomandată pentru uz comercial din motive de securitate.
+Pentru instalare, detalii [aici](https://hub.docker.com/r/gvenzl/oracle-free) și/sau [aici](https://www.oracle.com/database/free/faq/).
+
 Prefer să folosesc containere ca să nu ruleze non-stop ca procese de tip serviciu și ca să le pot șterge/reface mai ușor.
 Prefer podman în loc de docker deoarece nu necesită drepturi de admin în mod uzual.
 
-De văzut dacă merită efortul pe Windows, deoarece containerele sunt
-de fapt mașini virtuale pe Windows și pe macOS. Oracle DB se poate descărca și de aici: https://www.oracle.com/database/technologies/xe-downloads.html
+Containerele sunt de fapt mașini virtuale pe Windows și pe macOS. Momentan (august 2023), Oracle DB 23c nu este disponibilă direct pe Windows.
+
+Oracle DB 23c se poate descărca de [aici](https://www.oracle.com/database/free/download/).
+Oracle DB XE se poate descărca de [aici](https://www.oracle.com/database/technologies/xe-downloads.html).
 
 Pe macOS (din ce am auzit/citit) este posibil să fie nevoie de setări în plus ca să meargă rețeaua.
 Vedeți cu [colima](https://github.com/abiosoft/colima).
 
 ### Setup Oracle DB XE
+
+Pentru versiunea 23c, înlocuiți mai jos `oracle-xe` cu `oracle-free` și `21.3.0-slim` cu `23.2-slim`.
 
 Dacă vrem să verificăm că există imaginea în registry înainte să o descărcăm:
 ```
@@ -276,6 +283,7 @@ Bazele de date Oracle pot fi folosite în mod gratuit dacă nu este vorba de sco
 - XE (express edition): de regulă cu scop educațional și pentru testare
   - [aparent](https://asktom.oracle.com/pls/apex/f?p=100:11:::NO:RP:P11_QUESTION_ID:9536759800346388355) poate fi folosită gratuit pentru scopuri comerciale
   - are numeroase limitări: memorie RAM, spațiu pe disc, actualizarea versiunii (trebuie upgrade de la zero, nu are patches)
+  - aceleași restricții sunt și la 23c Free Developer Edition
 - SE (standard edition): licențe pe bani
   - are activate "din fabrică" numeroase facilități care pot fi folosite fără licență, ceea ce duce la încălcarea termenilor și condițiilor
   - înainte de utilizarea bazei de date, aceste facilități ar trebui dezactivate; procesul pare unul foarte complicat și anevoios
