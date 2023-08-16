@@ -58,9 +58,9 @@ WHERE nr <= 5;
 <details>
 <summary>Oracle
   (documentație
-  <a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/EXPLAIN-PLAN.html">aici</a>
+  <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/EXPLAIN-PLAN.html">aici</a>
   și
-  <a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/tgsql/generating-and-displaying-execution-plans.html">aici</a>)
+  <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/tgsql/generating-and-displaying-execution-plans.html">aici</a>)
 </summary>
 
   <pre lang="sql">
@@ -164,6 +164,9 @@ PostgreSQL oferă limbajul PL/PgSQL, destul de asemănător ca sintaxă cu PL/SQ
 SQL Server oferă limbajul T-SQL (Transact-SQL). Sintaxa diferă ceva mai mult față de PL/SQL, dar la nivel de funcționalități, limbajele sunt asemănătoare.
 
 MySQL pare un pic mai limitat la acest capitol față de MariaDB. Probabil că Oracle nu are motive să investească multe resurse în dezvoltarea MySQL pentru că și-ar face concurență la SGBD-ul comercial.
+
+SQLite este cel mai limitat la acest capitol deoarece nu funcționează pe principiul client-server, având nativ doar declanșatori.
+Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alte limbaje de programare sau cu ajutorul unor [extensii](https://github.com/nalgeon/sqlean).
 
 #### Cel mai simplu program
 
@@ -654,7 +657,7 @@ MySQL pare un pic mai limitat la acest capitol față de MariaDB. Probabil că O
 
 ## Laborator 3 - colecții
 
-#### Tipuri de date noi
+#### Tipuri de date stocate
 
 Unele baze de date ne permit definirea de noi tipuri de date, asemănător cu structurile din C.
 Nu putem avea câmpuri cu `%TYPE` (sau `%ROWTYPE`). În Oracle, deși nu crapă la crearea tipului, primim erori ulterior.
@@ -662,7 +665,7 @@ Nu putem avea câmpuri cu `%TYPE` (sau `%ROWTYPE`). În Oracle, deși nu crapă 
 Observăm că aceste tipuri de date pot fi folosite atât în SQL, cât și în limbaj procedural.
 
 <details>
-<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/lnpls/CREATE-TYPE-statement.html">aici</a>)</summary>
+<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/CREATE-TYPE-statement.html">aici</a>)</summary>
   <pre lang="sql">
     CREATE OR REPLACE TYPE tip_test AS OBJECT (
         id int,
@@ -732,40 +735,239 @@ Pot fi create tipuri de date asociate cu clase din .NET.
 
 În MyQL/MariaDB nu este implementat deloc `CREATE TYPE` ([sursa](https://stackoverflow.com/questions/10266101/create-type-on-mysql)).
 
-Se poate emula cu `CREATE TABLE` sau cu JSON.
+SQLite nu permite crearea de noi tipuri de date.
+
+Se poate emula cu `CREATE TABLE` (eventual temporar) sau cu JSON. JSON poate fi folosit în toate bazele de date relaționale relativ recente.
+
+#### Tipuri de date locale
+
+<details>
+<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-collections-and-records.html#GUID-75875E26-FC7B-4513-A5E2-EDA26F1D67B1">aici</a>)</summary>
+  <pre lang="sql">
+    DECLARE
+        TYPE tip_ang is RECORD (
+            nume    employees.first_name%type,
+            salariu employees.salary%type
+        );
+        emp1 tip_ang;
+    BEGIN
+        SELECT first_name, salary
+        INTO emp1
+        FROM employees
+        WHERE employee_id = 123;
+        --
+        DBMS_OUTPUT.PUT_LINE(emp1.nume || ' ' || emp1.salariu);
+        --
+        -- putem să specificăm câmpurile explicit
+        SELECT first_name, salary
+        INTO emp1.nume, emp1.salariu
+        FROM employees
+        WHERE employee_id = 123;
+        --
+        DBMS_OUTPUT.PUT_LINE(emp1.nume || ' ' || emp1.salariu);
+    END;  </pre>
+</details>
+
+<details>
+<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/plpgsql-declarations.html#PLPGSQL-DECLARATION-RECORDS">aici</a>)</summary>
+  <pre lang="sql">
+    DO $$
+    DECLARE
+        emp1 RECORD; -- nu are structură fixă
+    BEGIN
+        -- emp1 capătă structură de-abia când facem SELECT INTO variabilă
+        SELECT first_name, salary
+        INTO emp1
+        FROM employees
+        WHERE employee_id = 123;
+        --
+        RAISE NOTICE '% %', emp1.first_name, emp1.salary;
+    END $$;  </pre>
+</details>
+
+Celelalte baze de date nu au un astfel de echivalent. Ar putea fi simulat cu JSON.
 
 #### Tablouri indexate
 
-Tablourile indexate există doar în PL/SQL. Nu pot fi folosite în SQL.
+Tablourile indexate există doar în PL/SQL (Oracle - [docs](https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-collections-and-records.html#GUID-8060F01F-B53B-48D4-9239-7EA8461C2170)).
+Indexarea se poate face cu pls_integer (aka binary_integer) sau cu șiruri de caractere (string, varchar, varchar2, long).
+Tablourile indexate nu trebuie inițializare în prealabil. Nu pot fi folosite în SQL.
+
+```sql
+DECLARE
+    TYPE tab_nr_idx IS TABLE OF NUMBER
+        INDEX BY pls_integer;
+    v_tab tab_nr_idx;
+    i pls_integer;
+BEGIN
+    v_tab(2) := 55;
+    v_tab(3) := 56;
+    v_tab(361) := 1323;
+    v_tab(-204) := 666;
+
+    i := v_tab.FIRST;
+    --WHILE i <> v_tab.LAST + 1 LOOP
+    WHILE i IS NOT NULL LOOP
+        dbms_output.put_line(
+            i || ' ' || v_tab(i)
+        );
+        i := v_tab.NEXT(i);  -- de ce nu am incrementat?  i := i + 1;
+    END LOOP;
+    dbms_output.put_line('i este ' || i || '.');
+    IF v_tab.exists(100) THEN
+        v_tab.delete(100);
+    ELSE
+        dbms_output.put_line('nu avem');
+    END IF;
+END;
+```
 
 #### Vectori de lungime fixă
 
-Vectorii pot fi folosiți atât în SQL, cât și în limbaj procedural.
+Vectorii pot fi folosiți atât în SQL, cât și în limbaj procedural. Vectorii trebuie inițializați.
 
-Oracle permite definirea unor vectori de lungime fixă.
+Oracle permite definirea unor vectori de lungime fixă:
+```sql
+CREATE OR REPLACE TYPE vec_numere IS varray(5) OF NUMBER;
+
+SELECT vec_numere(1, 2, 6)
+FROM dual;
+
+DECLARE
+    TYPE vec_nr IS varray(10) OF NUMBER;
+    v vec_nr := vec_nr(1, 2);
+BEGIN
+    dbms_output.put_line(
+        'count: ' || v.count || ', ' ||
+        'limit: ' || v.limit
+    );
+END;
+```
 
 În PostgreSQL, se poate crea ad-hoc un tip de date `ARRAY` de dimensiune variabilă pentru orice tip de date definit.
 Dimensiunea nu trebuie specificată în prealabil ([sursa](https://www.postgresql.org/docs/current/arrays.html)).
+```sql
+DO $$
+DECLARE
+    -- arr INTEGER ARRAY[];   -- unidimensional
+    -- arr INTEGER[][];       -- multidimensional array; nu se extind automat
+    -- arr INTEGER ARRAY[10]; -- dacă specificăm o limită, este ignorată; ar putea fi util doar pt documentare
+    arr INTEGER[];        -- nu este obligatoriu să specificăm o limită
+BEGIN
+    arr[1] = 2;  -- implicit indexare de la 1
+    -- arr[-1] = 3;  -- pot fi folosiți indecși întregi arbitrari
+    arr[2] = 4;
+    -- arr[4] = 5;  -- pot exista goluri - acestea primesc valoarea NULL
+    --
+    RAISE NOTICE '%', arr;
+END $$;
+```
 
-În SQL Server poate fi folosit în schimb `TABLE`.
+În SQL Server nu există arrays; în schimb, poate fi folosit `TABLE`.
 
 MySQL/MariaDB nu implementează arrays. Pot fi emulați cu tabele temporare sau cu JSON.
 
+SQLite are [extensii](https://github.com/nalgeon/sqlean/issues/27#issuecomment-1004109889) pentru vectori de lungime variabilă.
+
 #### Tablouri imbricate
 
-Tablourile imbricate pot fi emulate cu tabele temporare. Acestea există în SQL și în limbaj procedural.
+Tablourile imbricate par să existe doar în Oracle. Acestea există în SQL și în limbaj procedural.
+În alte baze de date, ar putea fi emulate (parțial) cu tipuri de date tablou sau cu tabele temporare.
+O posibilă limitare la tabelele temporare este că trebuie să aibă nume distincte la nivel de sesiune.
 
 <details>
-<summary>Oracle</summary>
+<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-collections-and-records.html#GUID-5ADB7EE2-71F6-4172-ACD8-FFDCF2787A37">aici</a>)</summary>
   <pre lang="sql">
+    DECLARE
+        TYPE tab_nr IS TABLE OF NUMBER;
+        v tab_nr := tab_nr(3, 6, 1, 3, 6, 3);
+        j number;
     BEGIN
-        -- TBA
-        NULL;
+        dbms_output.put_line(
+            'count: ' || v.count || ', ' ||
+            'limit: ' || v.limit
+        );
+        FOR i IN v.FIRST..v.LAST LOOP
+            dbms_output.put_line('i: ' || i || ', ' ||
+                'v(i): ' || v(i)
+            );
+        END LOOP;
+        -- nu putem folosi tabele temporare deoarece nu putem executa comenzi DDL în PL/SQL
     END;  </pre>
 </details>
 
 <details>
-<summary>PostgreSQL</summary>
+<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createtable.html">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- Tabele temporare
+    END;  </pre>
+</details>
+
+<details>
+<summary>SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-table-transact-sql#temporary-tables">aici</a> și <a href="https://learn.microsoft.com/en-us/sql/t-sql/data-types/table-transact-sql">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- Tabele temporare sau table type
+        RETURN;
+    END;  </pre>
+</details>
+
+<details>
+<summary>MariaDB (documentație <a href="https://mariadb.com/kb/en/create-table/#create-temporary-table">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN NOT ATOMIC
+        -- Tabele temporare
+    END;  </pre>
+</details>
+
+##### Tablou în tablou
+
+Oracle:
+```sql
+CREATE OR REPLACE TYPE tab_int IS TABLE OF NUMBER;
+
+CREATE OR REPLACE TYPE tab_tab IS TABLE OF tab_int;
+
+CREATE TABLE tbl_imb (
+    id int,
+    tbl_int tab_int
+)
+NESTED TABLE tbl_int STORE AS tbl_int_store;
+
+CREATE TABLE tbl_imb2 (
+    id int,
+    tbl_tab tab_tab
+)
+NESTED TABLE tbl_tab STORE AS tbl_tab_store;
+
+SELECT tab_int(1, 2, 50)
+FROM dual;
+```
+
+În PostgreSQL am folosi `ARRAY` (vezi mai sus).
+
+În SQL Server nu putem avea coloane de tipuri de date tabel definite de noi ("A column cannot be of a user-defined table type").
+
+MySQL/MariaDB și SQLite nu au astfel de coloane.
+
+#### JSON
+
+Docs: [Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-data-types.html#GUID-C2831EA4-CE44-475B-A4E7-2A6BDA5E82CC),
+[PostgreSQL](https://www.postgresql.org/docs/current/datatype-json.html),
+[SQL Server](https://learn.microsoft.com/en-us/sql/relational-databases/json/json-data-sql-server),
+[MySQL](https://dev.mysql.com/doc/refman/8.1/en/json.html),
+[MariaDB](https://mariadb.com/kb/en/json-data-type/),
+[SQLite](https://www.sqlite.org/json1.html).
+
+## Laborator 4 - colecții
+
+TBA benchmarks. De văzut cu `t1 number := DBMS_UTILITY.get_time;`.
+
+## Laborator 5 - cursoare
+
+<details>
+<summary>Oracle (documentație <a href="">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
@@ -773,7 +975,7 @@ Tablourile imbricate pot fi emulate cu tabele temporare. Acestea există în SQL
 </details>
 
 <details>
-<summary>SQL Server</summary>
+<summary>PostgreSQL (documentație <a href="">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
@@ -782,26 +984,130 @@ Tablourile imbricate pot fi emulate cu tabele temporare. Acestea există în SQL
 </details>
 
 <details>
-<summary>MariaDB</summary>
+<summary>SQL Server (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
+<details>
+<summary>MariaDB (documentație <a href="">aici</a>)</summary>
   <pre lang="sql">
     BEGIN NOT ATOMIC
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
+Nu există cursoare în SQLite.
+
+Putem parcurge pe bucăți seturi mari de date direct din SQL în toate bazele de date fără să avem nevoie de cursoare:
+```sql
+SELECT coloana1, coloana2
+FROM tabel1
+WHERE conditie AND col_idx < valoare
+ORDER BY col_idx
+FETCH FIRST n ROWS ONLY;
+```
+
+Ideea este să avem index pe coloana `col_idx`: astfel, se sortează doar datele din index și apoi este necesar
+să accesăm numai aceste rânduri, mult mai puține decât dacă ar fi trebuit să ordonăm/accesăm toate datele.
+Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca valoarea lui `col_idx` să fie între 2 valori apropiate.
+
+## Laborator 6 - cursoare
+## Laborator 7 - funcții și proceduri
+
+<details>
+<summary>Oracle (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
         -- TBA
     END;  </pre>
 </details>
 
-## Laborator 4 - colecții
+<details>
+<summary>PostgreSQL (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
 
-TBA benchmarks. De văzut cu `t1 number := DBMS_UTILITY.get_time;`.
+<details>
+<summary>SQL Server (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
 
-## Laborator 5 - cursoare
-## Laborator 6 - cursoare
-## Laborator 7 - funcții și proceduri
+<details>
+<summary>MariaDB (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN NOT ATOMIC
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
 
 #### Pachete
 
-Avem pachete (asemănătoare cu spațiile de nume din C++ și C#) în Oracle și [MariaDB](https://mariadb.com/kb/en/create-package/).
-În PostgreSQL și [SQL Server](https://stackoverflow.com/questions/27833885/create-packages-in-sql-server-management-studio-without-ssis),
+Avem pachete (asemănătoare cu spațiile de nume din C++ și C#) în [Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/CREATE-PACKAGE-statement.html)
+și [MariaDB](https://mariadb.com/kb/en/create-package/) (dar nu și MySQL).
+În [PostgreSQL](https://www.postgresql.org/docs/current/sql-createschema.html) și
+[SQL Server](https://learn.microsoft.com/en-us/sql/t-sql/statements/create-schema-transact-sql)
+(vezi și [aici](https://stackoverflow.com/questions/27833885/create-packages-in-sql-server-management-studio-without-ssis)),
 pachetele pot fi emulate cu ajutorul schemelor.
+
+Nu există pachete în SQLite, iar schemele înseamnă pur și simplu [fișiere separate](https://www.sqlite.org/lang_attach.html) (`.db`, `.sqlite` sau similar).
 
 ## Laborator 8 - declanșatori
 ## Laborator 9 - declanșatori
+
+<details>
+<summary>Oracle (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+    END;  </pre>
+</details>
+
+<details>
+<summary>PostgreSQL (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
+<details>
+<summary>SQL Server (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
+<details>
+<summary>MariaDB (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN NOT ATOMIC
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
+<details>
+<summary>SQLite (documentație <a href="">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
