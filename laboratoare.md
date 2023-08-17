@@ -1069,7 +1069,7 @@ de implementat procedural decât declarativ.
                    hire_date AS zi
             FROM employees
             WHERE department_id = dep_id;
-
+        --
         ang crs%ROWTYPE;
         --
         -- colecții
@@ -1176,14 +1176,14 @@ de implementat procedural decât declarativ.
         -- FROM tbl;
         DBMS_SQL.PARSE(cursor_name, 'SELECT COUNT(*) FROM tbl', DBMS_SQL.NATIVE);
         ignore := DBMS_SQL.EXECUTE(cursor_name);
-
+        --
         -- Switch from DBMS_SQL to native dynamic SQL
         crs := DBMS_SQL.TO_REFCURSOR(cursor_name);
         FETCH crs INTO nr;
         CLOSE crs;
         DBMS_OUTPUT.PUT_LINE('nr este ' || nr);
         -- https://stackoverflow.com/questions/57867587
-
+        --
         cursor_name := DBMS_SQL.OPEN_CURSOR;
         DBMS_SQL.PARSE(cursor_name, 'DROP TABLE tbl', DBMS_SQL.NATIVE);
         ignore := DBMS_SQL.EXECUTE(cursor_name);
