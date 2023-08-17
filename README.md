@@ -273,7 +273,7 @@ Pe DB de la facultate nu avem drepturi de admin, deci nu avem acces la tabele, v
 În Oracle DB, un user este echivalent cu o schemă, deci un user nu poate avea mai multe scheme.
 Dacă avem nevoie de o nouă schemă, o creăm cu sintaxa `CREATE USER`.
 Pentru acordarea mai multor drepturi deodată, folosim sintaxa `CREATE SCHEMA`.
-Detalii [aici](https://docs.oracle.com/cd/B19306_01/server.102/b14200/statements_6014.htm).
+Detalii [aici](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/CREATE-SCHEMA.html).
 
 #### Despre licențe și Oracle
 
@@ -300,7 +300,7 @@ Bazele de date Oracle pot fi folosite în mod gratuit dacă nu este vorba de sco
 Noi folosim varianta XE pentru că celelalte variante ocupă mult prea mult spațiu și oricum nu ne interesează facilitățile în plus.
 În mod curios, pe XE mai noi sunt incluse facilități premium care nu sunt disponibile în SE.
 
-Din ce înțeleg, putem identifica (o parte) din aceste facilități cu următoarea cerere:
+Din ce înțeleg, putem identifica (o parte din) aceste facilități cu următoarea cerere:
 ```sql
 SELECT PARAMETER name, value
 FROM "v$option" vo

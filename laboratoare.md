@@ -73,14 +73,10 @@ WHERE nr <= 5;
     SELECT * FROM table(DBMS_XPLAN.DISPLAY('plan_table', 'plan1', 'all'));  </pre>
 </details>
 
+
 <details>
-<summary>MariaDB/MySQL
-  (documentație
-  <a href="https://mariadb.com/kb/en/explain/">aici</a>
-  și
-  <a href="https://mariadb.com/kb/en/analyze-statement/">aici</a>,
-  iar pentru MySQL
-  <a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html">aici</a>)
+<summary>PostgreSQL
+  (documentație <a href="https://www.postgresql.org/docs/current/sql-explain.html">aici</a>)
 </summary>
 
   <pre lang="sql">
@@ -88,10 +84,15 @@ WHERE nr <= 5;
     SELECT *
     FROM employees;
 
-    ANALYZE
+    EXPLAIN ANALYZE
     SELECT *
-    FROM employees;  </pre>
+    FROM employees;
+
+    EXPLAIN (ANALYZE, BUFFERS)
+    SELECT *
+    FROM employees;      </pre>
 </details>
+
 
 <details>
 <summary>SQL Server
@@ -115,9 +116,15 @@ WHERE nr <= 5;
     -- SET SHOWPLAN_TEXT OFF;  </pre>
 </details>
 
+
 <details>
-<summary>PostgreSQL
-  (documentație <a href="https://www.postgresql.org/docs/current/sql-explain.html">aici</a>)
+<summary>MariaDB/MySQL
+  (documentație
+  <a href="https://mariadb.com/kb/en/explain/">aici</a>
+  și
+  <a href="https://mariadb.com/kb/en/analyze-statement/">aici</a>,
+  iar pentru MySQL
+  <a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html">aici</a>)
 </summary>
 
   <pre lang="sql">
@@ -125,14 +132,11 @@ WHERE nr <= 5;
     SELECT *
     FROM employees;
 
-    EXPLAIN ANALYZE
+    ANALYZE
     SELECT *
-    FROM employees;
-
-    EXPLAIN (ANALYZE, BUFFERS)
-    SELECT *
-    FROM employees;      </pre>
+    FROM employees;  </pre>
 </details>
+
 
 <details>
 <summary>SQLite
@@ -159,7 +163,7 @@ Limbajul PL/SQL este o extensie a limbajului SQL pentru a adăuga elemente proce
 
 Limbajul PL/SQL a fost introdus de Oracle, la vremea respectivă având monopol asupra pieței. Pe baza acestui limbaj s-a încercat standardizarea acestor extensii în SQL/PSM. În practică, fiecare SGBD a implementat partea procedurală în manieră proprie și există numeroase incompatibilități.
 
-PostgreSQL oferă limbajul PL/PgSQL, destul de asemănător ca sintaxă cu PL/SQL. Totuși, comportamentul diferă între cele două în anumite cazuri limită. Impresia mea este că PL/PgSQL este mai permisiv ca sintaxă și că implementează diverse facilități în plus (de exemplu, sunt permise comenzi DDL).
+PostgreSQL oferă limbajul PL/PgSQL, destul de asemănător ca sintaxă cu PL/SQL. Totuși, comportamentul diferă între cele două în anumite cazuri limită. PL/PgSQL este mai permisiv ca sintaxă, iar comenzile DDL sunt mult mai ușor și natural de folosit decât în Oracle.
 
 SQL Server oferă limbajul T-SQL (Transact-SQL). Sintaxa diferă ceva mai mult față de PL/SQL, dar la nivel de funcționalități, limbajele sunt asemănătoare.
 
@@ -178,6 +182,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
     END;  </pre>
 </details>
 
+
 <details>
 <summary>PostgreSQL</summary>
   <pre lang="sql">
@@ -190,6 +195,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
     DO 'BEGIN END'; </pre>
 </details>
 
+
 <details>
 <summary>SQL Server</summary>
   <pre lang="sql">
@@ -197,6 +203,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         RETURN;
     END;  </pre>
 </details>
+
 
 <details>
 <summary>MariaDB</summary>
@@ -216,6 +223,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
     END;  </pre>
 </details>
 
+
 <details>
 <summary>PostgreSQL</summary>
   <pre lang="sql">
@@ -225,6 +233,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
     END $$; </pre>
 </details>
 
+
 <details>
 <summary>SQL Server</summary>
   <pre lang="sql">
@@ -232,6 +241,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         PRINT 'Hello, world!';
     END;  </pre>
 </details>
+
 
 <details>
 <summary>MariaDB</summary>
@@ -314,9 +324,10 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
             ', salariul: ' || ang.salary
         );
         --
-        -- comenzile DDL nu merg în Oracle
-        -- CREATE TABLE IF NOT EXISTS tbl(id int);
+        -- comenzile DDL nu merg direct în Oracle
+        -- CREATE TABLE tbl(id int);
         -- DROP TABLE tbl;
+        -- trebuie să folosim proceduri dedicate și cursoare; vezi la cursoare
         --
         -- incrementare/decrementare doar cu pas 1
         FOR i IN 1..x LOOP
@@ -342,6 +353,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         END LOOP;
     END;  </pre>
 </details>
+
 
 <details>
 <summary>PostgreSQL</summary>
@@ -412,6 +424,10 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         --
         -- comenzile DDL merg în Postgres
         CREATE TABLE IF NOT EXISTS tbl(id int);
+        SELECT COUNT(*)
+        INTO j
+        FROM tbl;
+        RAISE NOTICE 'j este %', j;
         DROP TABLE tbl;
         --
         FOR i IN 1..x BY 2 LOOP
@@ -438,6 +454,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         END LOOP;
     END $$;  </pre>
 </details>
+
 
 <details>
 <summary>SQL Server</summary>
@@ -501,6 +518,8 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         )
         BEGIN
             CREATE TABLE tbl(id int);
+            SET @j = (SELECT COUNT(*) FROM tbl);
+            PRINT 'j este ' + ltrim(str(@j));
             DROP TABLE tbl;
         END;
         --
@@ -528,6 +547,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
     END;  </pre>
 </details>
 
+
 <details>
 <summary>MariaDB</summary>
   <pre lang="sql">
@@ -542,6 +562,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         -- https://dev.mysql.com/doc/refman/8.1/en/declare-local-variable.html
         DECLARE nume TYPE OF employees.first_name;
         DECLARE ang ROW TYPE OF employees;
+        -- merge cu %TYPE sau %ROWTYPE dacă setăm sql_mode=Oracle
         -- .
         -- https://stackoverflow.com/questions/273437/how-do-you-debug-mysql-stored-procedures
         -- DROP TABLE logs;
@@ -564,6 +585,7 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
             INSERT INTO logs (msg) VALUES(CONCAT('x este ', x));
         ELSEIF x > 1 THEN
             -- nu avem ELSIF în MariaDB/MySQL
+            -- putem avea ELSIF cu SET sql_mode=Oracle
             -- SET stdout = CONCAT(stdout, 'x chiar este ', x, '\n');
             INSERT INTO logs (msg) VALUES(CONCAT('x chiar este ', x));
         ELSE
@@ -615,6 +637,10 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         -- .
         -- comenzile DDL merg în MariaDB
         CREATE TABLE IF NOT EXISTS tbl(id INT);
+        SELECT COUNT(*)
+        INTO j
+        FROM tbl;
+        INSERT INTO logs (msg) VALUES(CONCAT('j este ', j));
         DROP TABLE IF EXISTS tbl;
         -- .
         -- MySQL are doar LOOP, REPEAT/UNTIL și WHILE
@@ -701,6 +727,7 @@ Observăm că aceste tipuri de date pot fi folosite atât în SQL, cât și în 
     END;  </pre>
 </details>
 
+
 <details>
 <summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createtype.html">aici</a>)</summary>
   <pre lang="sql">
@@ -734,6 +761,7 @@ Observăm că aceste tipuri de date pot fi folosite atât în SQL, cât și în 
         RAISE NOTICE '% %', emp2.id, emp2.nume;
     END $$;  </pre>
 </details>
+
 
 SQL Server nu are un echivalent pentru `CREATE TYPE` ca cele de mai sus ([sursa](https://learn.microsoft.com/en-us/sql/t-sql/statements/create-type-transact-sql)).
 Pot fi create tipuri de date asociate cu clase din .NET.
@@ -773,6 +801,7 @@ Se poate emula cu `CREATE TABLE` (eventual temporar) sau cu JSON. JSON poate fi 
     END;  </pre>
 </details>
 
+
 <details>
 <summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/plpgsql-declarations.html#PLPGSQL-DECLARATION-RECORDS">aici</a>)</summary>
   <pre lang="sql">
@@ -789,6 +818,7 @@ Se poate emula cu `CREATE TABLE` (eventual temporar) sau cu JSON. JSON poate fi 
         RAISE NOTICE '% %', emp1.first_name, emp1.salary;
     END $$;  </pre>
 </details>
+
 
 Celelalte baze de date nu au un astfel de echivalent. Ar putea fi simulat cu JSON.
 
@@ -899,9 +929,9 @@ O posibilă limitare la tabelele temporare este că trebuie să aibă nume disti
                 'v(i): ' || v(i)
             );
         END LOOP;
-        -- nu putem folosi tabele temporare deoarece nu putem executa comenzi DDL în PL/SQL
     END;  </pre>
 </details>
+
 
 <details>
 <summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createtable.html">aici</a>)</summary>
@@ -926,6 +956,7 @@ O posibilă limitare la tabelele temporare este că trebuie să aibă nume disti
         DROP TABLE tab_nr;
     END $$;  </pre>
 </details>
+
 
 <details>
 <summary>SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-table-transact-sql#temporary-tables">aici</a> și <a href="https://learn.microsoft.com/en-us/sql/t-sql/data-types/table-transact-sql">aici</a>)</summary>
@@ -956,6 +987,7 @@ O posibilă limitare la tabelele temporare este că trebuie să aibă nume disti
     END;  </pre>
 </details>
 
+
 <details>
 <summary>MariaDB (documentație <a href="https://mariadb.com/kb/en/create-table/#create-temporary-table">aici</a>)</summary>
   <pre lang="sql">
@@ -969,6 +1001,7 @@ O posibilă limitare la tabelele temporare este că trebuie să aibă nume disti
         DROP TABLE tab_nr;
     END;  </pre>
 </details>
+
 
 ##### Tablou în tablou
 
@@ -1011,44 +1044,293 @@ Docs: [Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/23/lnp
 
 ## Laborator 4 - colecții
 
-TBA benchmarks. De văzut cu `t1 number := DBMS_UTILITY.get_time;`.
+TBA benchmarks. De văzut cu `t1 number := DBMS_UTILITY.GET_TIME;`.
 
 ## Laborator 5 - cursoare
 
+De obicei este de preferat să lucrăm direct cu SELECT-uri pentru a procesa
+mai multe rânduri deodată. Cursoarele procesează datele la nivel de un singur
+rând. Doar în Oracle se pot prelucra mai multe rânduri deodată, dar și acolo
+de obicei e mai rapid fără cursoare.
+
+Un exemplu de situație când cursoarele ar putea fi utile este când avem de
+actualizat o tabelă în care se fac foarte multe citiri: configurat corespunzător,
+un cursor ar avea nevoie să blocheze doar câte un singur rând la un moment dat.
+
+Alt exemplu de situație este dacă nu avem așa multe date și este mult mai ușor
+de implementat procedural decât declarativ.
+
 <details>
-<summary>Oracle (documentație <a href="">aici</a>)</summary>
+<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/static-sql.html#GUID-89E0242F-42AC-4B21-9DF1-ACD6F4FC03B9">aici</a>)</summary>
   <pre lang="sql">
+    DECLARE
+        CURSOR crs(dep_id employees.department_id%TYPE) IS
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
+
+        ang crs%ROWTYPE;
+        --
+        -- colecții
+        --
+        TYPE tab_idx IS TABLE OF crs%ROWTYPE
+            INDEX BY PLS_INTEGER;
+        tab tab_idx;
+        j NUMBER := 0;
     BEGIN
-        -- TBA
+        DBMS_OUTPUT.PUT_LINE('dep 20');
+        OPEN crs(20);
+        LOOP
+            FETCH crs
+            INTO ang;
+            EXIT WHEN c%NOTFOUND;
+            DBMS_OUTPUT.PUT_LINE(
+                'nume: ' || ang.nume || ' ' ||
+                'zi: ' || ang.zi
+            );
+        END LOOP;
+        CLOSE crs;
+        DBMS_OUTPUT.PUT_LINE('dep 40');
+        --
+        -- ciclu cursor
+        FOR rec IN crs(40) LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                'nume: ' || rec.nume || ' ' ||
+                'zi: ' || rec.zi
+            );
+        END LOOP;
+        --
+        -- cu colecții
+        DBMS_OUTPUT.PUT_LINE('dep 30');
+        OPEN crs(dep_id => 30);
+        LOOP
+            -- parcurgem in batchuri si
+            -- nu avem nevoie de order by
+            FETCH crs
+            BULK COLLECT INTO tab LIMIT 5;
+            DBMS_OUTPUT.PUT_LINE(
+                'nr total: ' || crs%ROWCOUNT
+            );
+            -- NOTFOUND dacă nu am luat cât am cerut în clauza LIMIT
+            -- EXIT WHEN crs%NOTFOUND;
+            EXIT WHEN j = crs%ROWCOUNT;
+            --
+            FOR i IN tab.FIRST..tab.LAST LOOP
+                j := j + 1;
+                DBMS_OUTPUT.PUT_LINE(
+                    'j: ' || j || ', ' ||
+                    tab(i).nume || ', ' ||
+                    tab(i).zi
+                );
+            END LOOP;
+        END LOOP;
+        CLOSE crs;
     END;  </pre>
 </details>
 
 <details>
-<summary>PostgreSQL (documentație <a href="">aici</a>)</summary>
+<summary>Exemplu SQL injection</summary>
   <pre lang="sql">
+    DECLARE
+        c_ref SYS_REFCURSOR;
+        -- query varchar2(30) := ' ''T'' ';
+        query varchar2(30) := ' ''T'' or 1=1';
+        --query varchar2(30) := 'T';
+        fn employees.first_name%TYPE;
+        zi employees.hire_date%TYPE;
     BEGIN
-        -- TBA
-        RETURN;
+        OPEN c_ref FOR
+            'select first_name, hire_date ' ||
+            'from employees ' ||
+            'where first_name < :query'
+            USING query;
+        -- am avea SQL injection dacă am concatena direct variabila query
+        --
+        LOOP
+            FETCH c_ref
+            INTO fn, zi;
+            EXIT WHEN c_ref%NOTFOUND;
+            DBMS_OUTPUT.PUT_LINE(fn || ' ' || zi);
+        END LOOP;
+        --
+        CLOSE c_ref;
     END;  </pre>
 </details>
 
 <details>
-<summary>SQL Server (documentație <a href="">aici</a>)</summary>
+<summary>Exemplu DDL în Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/arpls/DBMS_SQL.html">aici</a>)</summary>
   <pre lang="sql">
+    DECLARE
+        cursor_name INTEGER;
+        ignore INTEGER;
+        nr INTEGER;
+        crs SYS_REFCURSOR;
     BEGIN
-        -- TBA
-        RETURN;
+        cursor_name := DBMS_SQL.OPEN_CURSOR;
+        DBMS_SQL.PARSE(cursor_name, 'CREATE TABLE tbl(id INT)', DBMS_SQL.NATIVE);
+        ignore := DBMS_SQL.EXECUTE(cursor_name);
+        -- eroare, tbl nu există
+        -- SELECT COUNT(*)
+        -- INTO nr
+        -- FROM tbl;
+        DBMS_SQL.PARSE(cursor_name, 'SELECT COUNT(*) FROM tbl', DBMS_SQL.NATIVE);
+        ignore := DBMS_SQL.EXECUTE(cursor_name);
+
+        -- Switch from DBMS_SQL to native dynamic SQL
+        crs := DBMS_SQL.TO_REFCURSOR(cursor_name);
+        FETCH crs INTO nr;
+        CLOSE crs;
+        DBMS_OUTPUT.PUT_LINE('nr este ' || nr);
+        -- https://stackoverflow.com/questions/57867587
+
+        cursor_name := DBMS_SQL.OPEN_CURSOR;
+        DBMS_SQL.PARSE(cursor_name, 'DROP TABLE tbl', DBMS_SQL.NATIVE);
+        ignore := DBMS_SQL.EXECUTE(cursor_name);
+        DBMS_SQL.CLOSE_CURSOR(cursor_name);
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- cârpeală necesară înainte de 23c
+            -- în 23c avem CREATE TABLE IF NOT EXISTS
+            -- 955 există deja; 942 nu există
+            IF SQLCODE = -955 OR SQLCODE = -942 THEN
+                DBMS_OUTPUT.PUT_LINE('nop');
+                NULL;
+            ELSE
+                RAISE;
+            END IF;
     END;  </pre>
 </details>
 
+
 <details>
-<summary>MariaDB (documentație <a href="">aici</a>)</summary>
+<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/plpgsql-cursors.html">aici</a>)</summary>
   <pre lang="sql">
+    DO $$
+    DECLARE
+        crs CURSOR (dep_id employees.department_id%TYPE) FOR
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
+        ang RECORD;
+    BEGIN
+        RAISE NOTICE 'dep 40';
+        OPEN crs(40);
+        LOOP
+            FETCH crs
+            INTO ang;
+            EXIT WHEN NOT FOUND;
+            RAISE NOTICE '%', ang;  -- putem afișa un record cu totul
+        END LOOP;
+        CLOSE crs;
+        --
+        RAISE NOTICE 'dep 30';
+        FOR rec IN crs(dep_id := 30) LOOP
+            RAISE NOTICE 'nume: %, zi: %', rec.nume, rec.zi;
+        END LOOP;
+        -- cursoarele din Postgres pot fi scrollable (dacă datele nu se schimbă)
+        -- se închid automat la încheierea tranzacției
+        -- nu putem face fetch la mai multe rânduri deodată
+        -- folosim MOVE în loc de FETCH dacă nu avem nevoie de date
+        --
+        -- Postgres are și cursoare la nivel de SQL
+        -- https://www.postgresql.org/docs/current/sql-declare.html
+    END $$;  </pre>
+</details>
+
+
+<details>
+<summary>SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/language-elements/cursors-transact-sql">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        DECLARE @nume VARCHAR(30);
+        DECLARE @zi DATE;
+        DECLARE Employee_Cursor CURSOR FOR
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = 20; -- nu avem cursoare cu parametru în T-SQL
+        --
+        OPEN Employee_Cursor;
+        FETCH NEXT FROM Employee_Cursor
+        INTO @nume, @zi;
+        --
+        WHILE @@FETCH_STATUS = 0
+            BEGIN
+                PRINT @nume + ', ' + CAST(@zi AS VARCHAR);
+                FETCH NEXT FROM Employee_Cursor
+                INTO @nume, @zi;
+            END;
+        CLOSE Employee_Cursor;
+        DEALLOCATE Employee_Cursor;
+    END;  </pre>
+</details>
+
+
+<details>
+<summary>MariaDB (documentație <a href="https://mariadb.com/kb/en/cursor-overview/">aici</a>)</summary>
+  <pre lang="sql">
+    SET sql_mode='';
     BEGIN NOT ATOMIC
-        -- TBA
-        RETURN;
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE nume VARCHAR(30);
+        DECLARE zi date;
+        DECLARE crs CURSOR (dep_id INT) FOR
+                    SELECT first_name AS nume,
+                           hire_date AS zi
+                    FROM employees
+                    WHERE department_id = dep_id;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=TRUE;
+        SELECT 'dep 20';
+        OPEN crs(20);
+        read_loop: LOOP
+            FETCH crs
+            INTO nume, zi;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+            SELECT nume, zi;
+        END LOOP;
+        CLOSE crs;
+        -- .
+        SELECT 'dep 30';
+        FOR rec IN crs(30) DO
+            SELECT rec.nume, rec.zi;
+        END FOR;
     END;  </pre>
 </details>
+
+<details>
+<summary>MariaDB în mod Oracle (documentație <a href="https://mariadb.com/kb/en/sql_modeoracle/">aici</a>)</summary>
+  <pre lang="sql">
+    SET sql_mode=Oracle;
+    DECLARE
+        nume VARCHAR(30);
+        zi date;
+        CURSOR crs (dep_id employees.department_id%TYPE) IS
+                    SELECT first_name AS nume,
+                           hire_date AS zi
+                    FROM employees
+                    WHERE department_id = dep_id;
+    BEGIN
+        SELECT 'dep 20';
+        OPEN crs(20);
+        LOOP
+            FETCH crs
+            INTO nume, zi;
+            EXIT WHEN crs%NOTFOUND;
+            SELECT nume, zi;
+        END LOOP;
+        CLOSE crs;
+        -- .
+        SELECT 'dep 30';
+        FOR rec IN crs(30) LOOP
+            SELECT rec.nume, rec.zi;
+        END LOOP;
+    END;  </pre>
+</details>
+
 
 Nu există cursoare în SQLite.
 
@@ -1058,7 +1340,11 @@ SELECT coloana1, coloana2
 FROM tabel1
 WHERE conditie AND col_idx < valoare
 ORDER BY col_idx
-FETCH FIRST n ROWS ONLY;
+FETCH FIRST n ROWS ONLY; -- standard SQL
+--
+-- SELECT TOP n ... -- în SQL Server
+--
+-- ORDER BY ... LIMIT n OFFSET k -- în Postgres/MySQL/MariaDB/SQLite
 ```
 
 Ideea este să avem index pe coloana `col_idx`: astfel, se sortează doar datele din index și apoi este necesar
@@ -1066,10 +1352,11 @@ să accesăm numai aceste rânduri, mult mai puține decât dacă ar fi trebuit 
 Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca valoarea lui `col_idx` să fie între 2 valori apropiate.
 
 ## Laborator 6 - cursoare
+
 ## Laborator 7 - funcții și proceduri
 
 <details>
-<summary>Oracle (documentație <a href="">aici</a>)</summary>
+<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-subprograms.html">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
@@ -1077,16 +1364,7 @@ Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca val
 </details>
 
 <details>
-<summary>PostgreSQL (documentație <a href="">aici</a>)</summary>
-  <pre lang="sql">
-    BEGIN
-        -- TBA
-        RETURN;
-    END;  </pre>
-</details>
-
-<details>
-<summary>SQL Server (documentație <a href="">aici</a>)</summary>
+<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createfunction.html">aici</a> și <a href="https://www.postgresql.org/docs/current/sql-createprocedure.html">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
@@ -1095,7 +1373,16 @@ Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca val
 </details>
 
 <details>
-<summary>MariaDB (documentație <a href="">aici</a>)</summary>
+<summary>SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql">aici</a> și <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-procedure-transact-sql">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
+<details>
+<summary>MariaDB (documentație <a href="https://mariadb.com/kb/en/stored-functions/">aici</a> și <a href="https://mariadb.com/kb/en/stored-procedures/">aici</a>)</summary>
   <pre lang="sql">
     BEGIN NOT ATOMIC
         -- TBA
@@ -1105,7 +1392,7 @@ Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca val
 
 #### Pachete
 
-Avem pachete (asemănătoare cu spațiile de nume din C++ și C#) în [Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/CREATE-PACKAGE-statement.html)
+Avem pachete (asemănătoare cu spațiile de nume din C++ și C#) în [Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/CREATE-PACKAGE-statement.html) (alte [docs](https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-packages.html))
 și [MariaDB](https://mariadb.com/kb/en/create-package/) (dar nu și MySQL).
 În [PostgreSQL](https://www.postgresql.org/docs/current/sql-createschema.html) și
 [SQL Server](https://learn.microsoft.com/en-us/sql/t-sql/statements/create-schema-transact-sql)
@@ -1117,7 +1404,7 @@ Nu există pachete în SQLite, iar schemele înseamnă pur și simplu [fișiere 
 ## Laborator 8 - declanșatori
 
 <details>
-<summary>Oracle (documentație <a href="">aici</a>)</summary>
+<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-triggers.html">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
@@ -1125,16 +1412,7 @@ Nu există pachete în SQLite, iar schemele înseamnă pur și simplu [fișiere 
 </details>
 
 <details>
-<summary>PostgreSQL (documentație <a href="">aici</a>)</summary>
-  <pre lang="sql">
-    BEGIN
-        -- TBA
-        RETURN;
-    END;  </pre>
-</details>
-
-<details>
-<summary>SQL Server (documentație <a href="">aici</a>)</summary>
+<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/plpgsql-trigger.html">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
@@ -1143,7 +1421,16 @@ Nu există pachete în SQLite, iar schemele înseamnă pur și simplu [fișiere 
 </details>
 
 <details>
-<summary>MariaDB (documentație <a href="">aici</a>)</summary>
+<summary>SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-trigger-transact-sql">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
+<details>
+<summary>MariaDB (documentație <a href="https://mariadb.com/kb/en/create-trigger/">aici</a>)</summary>
   <pre lang="sql">
     BEGIN NOT ATOMIC
         -- TBA
@@ -1152,7 +1439,7 @@ Nu există pachete în SQLite, iar schemele înseamnă pur și simplu [fișiere 
 </details>
 
 <details>
-<summary>SQLite (documentație <a href="">aici</a>)</summary>
+<summary>SQLite (documentație <a href="https://www.sqlite.org/lang_createtrigger.html">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
