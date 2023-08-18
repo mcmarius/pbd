@@ -1719,21 +1719,121 @@ Nu există pachete în SQLite, iar schemele înseamnă pur și simplu [fișiere 
 
 ## Laborator 8 - declanșatori
 
+Declanșatorii se pot clasifica în mai multe feluri:
+- categorie: de sistem și de aplicație
+- momentul declanșării: BEFORE, AFTER, INSTEAD OF
+- de câte ori se declanșează: la nivel de cerere (instrucțiune) și la nivel de rând
+
+Folosim triggeri de tip BEFORE dacă vrem să facem validări mai complexe. Exemple:
+- unicitate pe date din mai multe tabele
+- simulat chei străine
+- constrângeri dificil de exprimat cu CHECK constraints
+
+Folosim triggeri de tip AFTER în următoarele situații:
+- loguri și auditări
+- denormalizarea bazei de date pentru acces mai rapid la date
+
+Este de preferat să avem triggeri separați decât să avem un singur trigger cu
+verificări la runtime pentru tipul de eveniment din motive de performanță.
+
+În Oracle, nu ne putem referi la rândurile modificate în triggeri la nivel de instrucțiune.
+
+În Postgres și SQL Server nu avem această restricție:
+- pentru Postgres, avem clauza `REFERENCING OLD/NEW TABLE AS...`
+- pentru SQL Server, avem tabelele `INSERTED` și `DELETED`
+
 <details>
 <summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-triggers.html">aici</a>)</summary>
   <pre lang="sql">
+    -- setup inițial
+    CREATE TABLE employees_copy AS SELECT * FROM employees;
+    --
+    CREATE OR REPLACE TRIGGER trig_ang
+    BEFORE
+    UPDATE OF first_name
+    ON employees_copy
+    FOR EACH ROW
+    DECLARE
+	    nr INT;
     BEGIN
-        -- TBA
-    END;  </pre>
+	    SELECT COUNT(*)
+	    INTO nr
+	    -- FROM employees_copy e  -- nu merge așa - trigger is mutating
+	    FROM employees e
+	    WHERE e.DEPARTMENT_ID = :OLD.department_id;
+        --
+	    IF nr > 20 THEN
+		    RAISE_APPLICATION_ERROR(-20001, 'prea multa lume');
+	    END IF;
+    END trig_ang;
+    --
+    -- teste trigger
+    --
+    -- update care declanșează trigger-ul
+    UPDATE employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 179;
+    --
+    -- update care nu declanșează trigger-ul
+    UPDATE employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 178;
+    --
+    ROLLBACK;
+    --
+    -- cleanup
+    -- automat se face DROP și la trigger
+    DROP TABLE employees_copy;  </pre>
 </details>
 
 <details>
-<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/plpgsql-trigger.html">aici</a>)</summary>
+<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createtrigger.html">aici</a> și <a href="https://www.postgresql.org/docs/current/plpgsql-trigger.html">aici</a>)</summary>
   <pre lang="sql">
+    -- setup inițial
+    CREATE TABLE employees_copy AS SELECT * FROM employees;
+    COMMIT;
+    --
+    CREATE OR REPLACE FUNCTION trig_ang()
+    RETURNS TRIGGER AS $trig_ang$
+    DECLARE
+        nr INT;
     BEGIN
-        -- TBA
-        RETURN;
-    END;  </pre>
+        SELECT COUNT(*)
+        INTO nr
+        FROM employees_copy e
+        WHERE e.DEPARTMENT_ID = OLD.department_id;
+        --
+        IF nr > 20 THEN
+            RAISE EXCEPTION 'prea multa lume';
+        END IF;
+        RETURN NEW;
+    END;
+    $trig_ang$ LANGUAGE plpgsql;
+    --
+    CREATE OR REPLACE TRIGGER trig_ang
+    BEFORE
+    UPDATE OF first_name
+    ON employees_copy
+    FOR EACH ROW
+    EXECUTE FUNCTION trig_ang();
+    --
+    -- teste trigger
+    --
+    -- update care declanșează trigger-ul
+    UPDATE employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 179;
+    --
+    -- update care nu declanșează trigger-ul
+    UPDATE employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 178;
+    --
+    ROLLBACK;
+    --
+    -- cleanup
+    -- automat se face DROP și la trigger
+    DROP TABLE employees_copy;  </pre>
 </details>
 
 <details>
