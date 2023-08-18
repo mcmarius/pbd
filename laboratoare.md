@@ -1650,29 +1650,21 @@ un cursor și afișează datele din setul de date. În cazul funcțiilor, vom
 <summary>Funcții MariaDB în mod Oracle</summary>
 <pre lang="sql">
     SET sql_mode=Oracle;
-    DECLARE
-        nume VARCHAR(30);
-        zi date;
-        CURSOR crs (dep_id employees.department_id%TYPE) IS
-                    SELECT first_name AS nume,
-                           hire_date AS zi
-                    FROM employees
-                    WHERE department_id = dep_id;
+    CREATE OR REPLACE FUNCTION func_afis_dep(dep_id employees.department_id%TYPE)
+    RETURN INT -- nu merge cu RETURNS
+    AS
+        nr INT := 0;
+        CURSOR crs(dep_id employees.department_id%TYPE) IS
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
     BEGIN
-        SELECT 'dep 20';
-        OPEN crs(20);
-        LOOP
-            FETCH crs
-            INTO nume, zi;
-            EXIT WHEN crs%NOTFOUND;
-            SELECT nume, zi;
+        FOR rec IN crs(dep_id) LOOP
+            INSERT INTO logs(msg) VALUES(CONCAT(rec.nume, ' ', rec.zi));
+            nr := nr + 1;
         END LOOP;
-        CLOSE crs;
-        -- .
-        SELECT 'dep 30';
-        FOR rec IN crs(30) LOOP
-            SELECT rec.nume, rec.zi;
-        END LOOP;
+        RETURN nr;
     END;
     -- .
     -- apel din SQL
