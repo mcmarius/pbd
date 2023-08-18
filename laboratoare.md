@@ -1357,7 +1357,9 @@ Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca val
 
 O funcție trebuie să întoarcă întotdeauna un rezultat. Funcțiile pot fi folosite
 direct din SQL. Procedurile nu întorc un rezultat, dar pot avea parametri de
-ieșire. Procedurile nu pot fi apelate (ușor) din SQL.
+ieșire. Procedurile nu pot fi apelate întotdeauna ușor din SQL.
+
+Pe lângă tipurile de date uzuale, funcțiile pot întoarce cursoare și tabele.
 
 Nu există funcții sau proceduri în SQLite. Funcțiile ar putea fi simulate cu extensia [define](https://github.com/nalgeon/sqlean/blob/main/docs/define.md).
 
@@ -1499,7 +1501,6 @@ un cursor și afișează datele din setul de date. În cazul funcțiilor, vom
     CALL proc_afis_dep(20, NULL);
     --
     -- apel din PL/pgSQL
-    --
     DO $$
     DECLARE
         nr INTEGER;
@@ -1515,18 +1516,91 @@ un cursor și afișează datele din setul de date. În cazul funcțiilor, vom
 <details>
 <summary>Funcții SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql">aici</a>)</summary>
   <pre lang="sql">
+    CREATE OR ALTER FUNCTION dbo.func_afis_dep(@dep_id INT) -- trebuie () și dacă nu avem params
+    RETURNS INT
+    AS
     BEGIN
-        -- TBA
-        RETURN;
+        DECLARE @nume VARCHAR(30);
+        DECLARE @zi DATE;
+        DECLARE @nr INT;
+        DECLARE Employee_Cursor CURSOR FOR
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = @dep_id;
+        --
+        SET @nr = 0;
+        OPEN Employee_Cursor;
+        FETCH NEXT FROM Employee_Cursor
+        INTO @nume, @zi;
+        --
+        WHILE @@FETCH_STATUS = 0
+            BEGIN
+                -- nu avem voie cu PRINT în funcții din SQL Server
+                -- PRINT @nume + ', ' + CAST(@zi AS VARCHAR);
+                SET @nr = @nr + 1;
+                FETCH NEXT FROM Employee_Cursor
+                INTO @nume, @zi;
+            END;
+        CLOSE Employee_Cursor;
+        DEALLOCATE Employee_Cursor;
+        RETURN @nr;
+    END;
+    --
+    COMMIT;
+    --
+    -- apel din SQL
+    SELECT dbo.func_afis_dep(20);
+    --
+    -- apel din T-SQL
+    BEGIN
+        DECLARE @nr INT;
+        SET @nr = dbo.func_afis_dep(30);
+        SELECT @nr;
+        SET @nr = (SELECT dbo.func_afis_dep(60));
+        SELECT @nr;
     END;  </pre>
 </details>
 
 <details>
 <summary>Proceduri SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-procedure-transact-sql">aici</a>)</summary>
   <pre lang="sql">
+    CREATE OR ALTER PROCEDURE dbo.proc_afis_dep(@dep_id INT, @nr INT OUT)
+    AS
     BEGIN
-        -- TBA
-        RETURN;
+        DECLARE @nume VARCHAR(30);
+        DECLARE @zi DATE;
+        DECLARE Employee_Cursor CURSOR FOR
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = @dep_id;
+        --
+        SET @nr = 0;
+        OPEN Employee_Cursor;
+        FETCH NEXT FROM Employee_Cursor
+        INTO @nume, @zi;
+        --
+        WHILE @@FETCH_STATUS = 0
+            BEGIN
+                PRINT @nume + ', ' + CAST(@zi AS VARCHAR);
+                SET @nr = @nr + 1;
+                FETCH NEXT FROM Employee_Cursor
+                INTO @nume, @zi;
+            END;
+        CLOSE Employee_Cursor;
+        DEALLOCATE Employee_Cursor;
+    END;
+    --
+    COMMIT;
+    --
+    -- apel
+    BEGIN
+        DECLARE @nr INT;
+        EXECUTE dbo.proc_afis_dep @dep_id = 20, @nr = @nr OUT;
+        PRINT 'nr este ' + LTRIM(STR(@nr));
+        EXECUTE dbo.proc_afis_dep @dep_id = 30, @nr = @nr OUT;
+        PRINT 'nr este ' + LTRIM(STR(@nr));
     END;  </pre>
 </details>
 
@@ -1534,18 +1608,108 @@ un cursor și afișează datele din setul de date. În cazul funcțiilor, vom
 <details>
 <summary>Funcții MariaDB (documentație <a href="https://mariadb.com/kb/en/stored-functions/">aici</a>)</summary>
   <pre lang="sql">
+    -- setup inițial
+    CREATE TABLE IF NOT EXISTS logs (
+            ts TIMESTAMP DEFAULT current_timestamp,
+            msg VARCHAR(2048)
+        ) ENGINE = myisam;
+    TRUNCATE TABLE logs;
+    -- .
+    SET sql_mode='';
+    CREATE OR REPLACE FUNCTION func_afis_dep(dep_id INT)
+    RETURNS INT
+    BEGIN
+        DECLARE nr INT;
+        DECLARE crs CURSOR(dep_id INT) FOR
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
+        SET nr = 0;
+        FOR rec IN crs(dep_id) DO
+            INSERT INTO logs(msg) VALUES(CONCAT(rec.nume, ' ', rec.zi));
+            SET nr = nr + 1;
+        END FOR;
+        RETURN nr;
+    END;
+    -- .
+    -- apel din cod procedural
     BEGIN NOT ATOMIC
-        -- TBA
-        RETURN;
+        DECLARE res TEXT;
+        TRUNCATE TABLE logs;
+        SET res = func_afis_dep(30);
+        -- nu merge direct INSERT INTO logs(msg) VALUES(func_afis_dep(30));
+        -- avem nevoie de variabilă deoarece apelul de funcție
+        -- face de asemenea un insert în tabela logs
+        INSERT INTO logs(msg) VALUES(res);
+        SELECT * FROM logs;
     END;  </pre>
+</details>
+
+<details>
+<summary>Funcții MariaDB în mod Oracle</summary>
+<pre lang="sql">
+    SET sql_mode=Oracle;
+    DECLARE
+        nume VARCHAR(30);
+        zi date;
+        CURSOR crs (dep_id employees.department_id%TYPE) IS
+                    SELECT first_name AS nume,
+                           hire_date AS zi
+                    FROM employees
+                    WHERE department_id = dep_id;
+    BEGIN
+        SELECT 'dep 20';
+        OPEN crs(20);
+        LOOP
+            FETCH crs
+            INTO nume, zi;
+            EXIT WHEN crs%NOTFOUND;
+            SELECT nume, zi;
+        END LOOP;
+        CLOSE crs;
+        -- .
+        SELECT 'dep 30';
+        FOR rec IN crs(30) LOOP
+            SELECT rec.nume, rec.zi;
+        END LOOP;
+    END;
+    -- .
+    -- apel din SQL
+    TRUNCATE TABLE logs;
+    SELECT func_afis_dep(20);
+    SELECT * FROM logs;
+    -- .
+    TRUNCATE TABLE logs;
+    SELECT func_afis_dep(30);
+    SELECT * FROM logs;  </pre>
 </details>
 
 <details>
 <summary>Proceduri MariaDB (documentație <a href="https://mariadb.com/kb/en/stored-procedures/">aici</a>)</summary>
   <pre lang="sql">
+    SET sql_mode='';
+    CREATE OR REPLACE PROCEDURE proc_afis_dep(IN dep_id INT, OUT nr INT)
+    BEGIN
+        DECLARE crs CURSOR(dep_id INT) FOR
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
+        SET nr = 0;
+        TRUNCATE TABLE logs; -- procedurile pot conține COMMIT-uri
+        FOR rec IN crs(dep_id) DO
+            INSERT INTO logs(msg) VALUES(CONCAT(rec.nume, ' ', rec.zi));
+            SET nr = nr + 1;
+        END FOR;
+    END;
+    -- .
+    -- apel din limbaj procedural
     BEGIN NOT ATOMIC
-        -- TBA
-        RETURN;
+        DECLARE nr INT;
+        CALL proc_afis_dep(30, nr);
+        SELECT * FROM logs;
+        SELECT nr;
     END;  </pre>
 </details>
 
