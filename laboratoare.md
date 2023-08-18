@@ -1759,6 +1759,8 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
 	    SELECT COUNT(*)
 	    INTO nr
 	    -- FROM employees_copy e  -- nu merge așa - trigger is mutating
+	    -- problema cu mutating e doar pe Oracle
+	    -- se poate rezolva cu compound trigger
 	    FROM employees e
 	    WHERE e.DEPARTMENT_ID = :OLD.department_id;
         --
@@ -1839,28 +1841,126 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
 <details>
 <summary>SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-trigger-transact-sql">aici</a>)</summary>
   <pre lang="sql">
+    -- setup inițial
+    SELECT * INTO dbo.employees_copy FROM dbo.employees;
+    --
+    CREATE OR ALTER TRIGGER dbo.trig_ang
+    ON dbo.employees_copy
+    AFTER   -- nu există triggeri before sau la nivel de linie
+    UPDATE  -- nu putem specifica o coloană
+    AS
+    IF (ROWCOUNT_BIG() = 0)
+    RETURN;  -- pt că mare parte din logică poate fi înainte de BEGIN
+    IF EXISTS (
+        SELECT COUNT(*)
+        FROM dbo.employees_copy e
+        WHERE e.department_id IN (SELECT department_id FROM inserted)
+        GROUP BY e.department_id
+        HAVING count(*) > 20
+    )
     BEGIN
-        -- TBA
+        -- argumentul 2
+        --   de la 11 la 19 pt severitate
+        --   sub 11 nu se afișează mesajul nostru
+        -- argumentul 3: 0-255
+        --   punctul unde are loc eroarea
+        --   ar trebui să fie unic (la nivel de program)
+        RAISERROR('prea multa lume', 11, 0);
+        ROLLBACK TRANSACTION;
         RETURN;
-    END;  </pre>
+    END;
+    --
+    COMMIT TRANSACTION;
+    --
+    -- update care declanșează trigger-ul
+    UPDATE dbo.employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 179;
+    --
+    -- update care nu declanșează trigger-ul
+    UPDATE dbo.employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 178;
+    --
+    -- cleanup
+    -- automat se face DROP și la trigger
+    DROP TABLE dbo.employees_copy;  </pre>
 </details>
 
 <details>
 <summary>MariaDB (documentație <a href="https://mariadb.com/kb/en/create-trigger/">aici</a>)</summary>
   <pre lang="sql">
-    BEGIN NOT ATOMIC
-        -- TBA
-        RETURN;
-    END;  </pre>
+    -- setup inițial
+    CREATE TABLE employees_copy AS SELECT * FROM employees;
+    --
+    CREATE OR REPLACE TRIGGER trig_ang
+    BEFORE  -- sau AFTER
+    UPDATE  -- nu putem limita coloanele afectate
+    ON employees_copy
+    FOR EACH ROW -- trigger doar la nivel de rând
+    BEGIN
+        DECLARE nr INT;
+        SET nr = 0;
+        SELECT COUNT(*)
+        INTO nr
+        FROM employees_copy e
+        WHERE e.DEPARTMENT_ID = OLD.department_id;
+        --
+        IF nr > 20 THEN
+            -- https://mariadb.com/kb/en/sqlstate/
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'prea multa lume';
+        END IF;
+    END;
+    --
+    -- update care declanșează trigger-ul
+    UPDATE employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 179;
+    --
+    -- update care nu declanșează trigger-ul
+    UPDATE employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 178;
+    --
+    -- cleanup
+    -- automat se face DROP și la trigger
+    DROP TABLE employees_copy;  </pre>
 </details>
 
 <details>
 <summary>SQLite (documentație <a href="https://www.sqlite.org/lang_createtrigger.html">aici</a>)</summary>
   <pre lang="sql">
+    -- setup inițial
+    CREATE TABLE employees_copy AS SELECT * FROM employees;
+    --
+    CREATE TRIGGER trig_ang
+    BEFORE  -- dar sunt de preferat AFTER triggers
+    UPDATE OF first_name
+    ON employees_copy
+    FOR EACH ROW -- trigger doar la nivel de rând
+    WHEN (
+        SELECT COUNT(*)
+        FROM employees_copy e
+        WHERE e.DEPARTMENT_ID = OLD.department_id
+    ) > 20
     BEGIN
-        -- TBA
-        RETURN;
-    END;  </pre>
+        -- https://stackoverflow.com/questions/22201049/
+        SELECT RAISE(ROLLBACK,'prea multa lume');
+    END;
+    --
+    -- update care declanșează trigger-ul
+    UPDATE employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 179;
+    --
+    -- update care nu declanșează trigger-ul
+    UPDATE employees_copy
+    SET first_name = 'asd'
+    WHERE employee_id = 178;
+    --
+    -- cleanup
+    -- automat se face DROP și la trigger
+    DROP TABLE employees_copy;  </pre>
 </details>
 
 
