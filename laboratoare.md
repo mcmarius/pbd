@@ -1355,16 +1355,165 @@ Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca val
 
 ## Laborator 7 - funcții și proceduri
 
+O funcție trebuie să întoarcă întotdeauna un rezultat. Funcțiile pot fi folosite
+direct din SQL. Procedurile nu întorc un rezultat, dar pot avea parametri de
+ieșire. Procedurile nu pot fi apelate (ușor) din SQL.
+
+Nu există funcții sau proceduri în SQLite. Funcțiile ar putea fi simulate cu extensia [define](https://github.com/nalgeon/sqlean/blob/main/docs/define.md).
+
+Refolosim exemplul de la cursoare. Vom implementa subprograme care parcurg
+un cursor și afișează datele din setul de date. În cazul funcțiilor, vom
+întoarce numărul de rânduri procesate.
+
+
 <details>
-<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-subprograms.html">aici</a>)</summary>
+<summary>Funcții Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-subprograms.html">aici</a>)</summary>
   <pre lang="sql">
+    CREATE OR REPLACE FUNCTION func_afis_dep(dep_id employees.department_id%TYPE)
+    RETURNS NUMBER  -- sau RETURN, dar RETURNS e mai portabil
+    IS
+        nr NUMBER := 0;
+        CURSOR crs(dep_id employees.department_id%TYPE) IS
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
     BEGIN
-        -- TBA
+        -- în exemplul de la cursoare am repetat logica de afișare
+        FOR rec IN crs(dep_id) LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                'nume: ' || rec.nume || ' ' ||
+                'zi: ' || rec.zi
+            );
+            nr := nr + 1;
+        END LOOP;
+        RETURN nr;
+    END func_afis_dep;
+    --
+    -- apel din SQL
+    SELECT func_afis_dep(20)
+    FROM dual;
+    --
+    -- apel din PL/SQL
+    BEGIN
+        DBMS_OUTPUT.PUT_LINE(func_afis_dep(20));
+        DBMS_OUTPUT.PUT_LINE(func_afis_dep(30));
     END;  </pre>
 </details>
 
 <details>
-<summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createfunction.html">aici</a> și <a href="https://www.postgresql.org/docs/current/sql-createprocedure.html">aici</a>)</summary>
+<summary>Proceduri Oracle</summary>
+  <pre lang="sql">
+    CREATE OR REPLACE PROCEDURE proc_afis_dep(
+        dep_id IN employees.department_id%TYPE,
+        nr OUT NUMBER
+    )
+    IS
+        CURSOR crs(dep_id employees.department_id%TYPE) IS
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
+    BEGIN
+        nr := 0;
+        FOR rec IN crs(dep_id) LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                'nume: ' || rec.nume || ' ' ||
+                'zi: ' || rec.zi
+            );
+            nr := nr + 1;
+        END LOOP;
+    END proc_afis_dep;
+    --
+    -- apel din PL/SQL
+    --
+    DECLARE
+        nr NUMBER;
+    BEGIN
+        proc_afis_dep(10, nr);
+        DBMS_OUTPUT.PUT_LINE('nr este ' || nr);
+        proc_afis_dep(20, nr);
+        DBMS_OUTPUT.PUT_LINE('nr este ' || nr);
+    END;  </pre>
+</details>
+
+
+<details>
+<summary>Funcții PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createfunction.html">aici</a>)</summary>
+  <pre lang="sql">
+    CREATE OR REPLACE FUNCTION func_afis_dep(dep_id employees.department_id%TYPE)
+    RETURNS INTEGER
+    AS $$
+    DECLARE
+        nr INTEGER = 0;
+        crs CURSOR(dep_id employees.department_id%TYPE) IS
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
+    BEGIN
+        FOR rec IN crs(dep_id) LOOP
+            RAISE NOTICE 'nume: %, zi: %', rec.nume, rec.zi;
+            nr = nr + 1;
+        END LOOP;
+        RETURN nr;
+    END;
+    $$ LANGUAGE plpgsql;
+    --
+    -- apel din SQL
+    SELECT func_afis_dep(20);
+    --
+    -- apel din PL/pgSQL
+    DO $$
+    BEGIN
+        RAISE NOTICE 'dep 20: %', func_afis_dep(20);
+        RAISE NOTICE 'dep 30: %', func_afis_dep(30);
+    END $$;  </pre>
+</details>
+
+<details>
+<summary>Proceduri PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createprocedure.html">aici</a>)</summary>
+  <pre lang="sql">
+    CREATE OR REPLACE PROCEDURE proc_afis_dep(
+        IN dep_id employees.department_id%TYPE,
+        OUT nr INTEGER
+    )
+    LANGUAGE plpgsql -- putem avea proceduri și cu LANGUAGE SQL
+    AS $$
+    DECLARE
+        crs CURSOR(dep_id employees.department_id%TYPE) IS
+            SELECT first_name AS nume,
+                   hire_date AS zi
+            FROM employees
+            WHERE department_id = dep_id;
+    BEGIN
+        nr = 0;
+        FOR rec IN crs(dep_id) LOOP
+            RAISE NOTICE 'nume: %, zi: %', rec.nume, rec.zi;
+            nr = nr + 1;
+        END LOOP;
+    END;
+    $$
+    --
+    -- apel din SQL
+    CALL proc_afis_dep(20, NULL);
+    --
+    -- apel din PL/pgSQL
+    --
+    DO $$
+    DECLARE
+        nr INTEGER;
+    BEGIN
+        CALL proc_afis_dep(10, nr);
+        RAISE NOTICE 'nr este %', nr;
+        CALL proc_afis_dep(20, nr);
+        RAISE NOTICE 'nr este %', nr;
+    END $$;  </pre>
+</details>
+
+
+<details>
+<summary>Funcții SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
@@ -1373,7 +1522,7 @@ Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca val
 </details>
 
 <details>
-<summary>SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql">aici</a> și <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-procedure-transact-sql">aici</a>)</summary>
+<summary>Proceduri SQL Server (documentație <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-procedure-transact-sql">aici</a>)</summary>
   <pre lang="sql">
     BEGIN
         -- TBA
@@ -1381,14 +1530,25 @@ Fie punem clauză de limită de rânduri, fie punem în condiția `WHERE` ca val
     END;  </pre>
 </details>
 
+
 <details>
-<summary>MariaDB (documentație <a href="https://mariadb.com/kb/en/stored-functions/">aici</a> și <a href="https://mariadb.com/kb/en/stored-procedures/">aici</a>)</summary>
+<summary>Funcții MariaDB (documentație <a href="https://mariadb.com/kb/en/stored-functions/">aici</a>)</summary>
   <pre lang="sql">
     BEGIN NOT ATOMIC
         -- TBA
         RETURN;
     END;  </pre>
 </details>
+
+<details>
+<summary>Proceduri MariaDB (documentație <a href="https://mariadb.com/kb/en/stored-procedures/">aici</a>)</summary>
+  <pre lang="sql">
+    BEGIN NOT ATOMIC
+        -- TBA
+        RETURN;
+    END;  </pre>
+</details>
+
 
 #### Pachete
 
