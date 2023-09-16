@@ -46,6 +46,7 @@ alternativ, dar mai puține date: https://www.sqltutorial.org/sql-sample-databas
 ### Diverse link-uri
 
 - https://nils85.github.io/sql-compat-table/index.html
+- https://use-the-index-luke.com/
 - https://stackoverflow.com/questions/49110728/where-current-of-in-pl-sql
 - https://docs.oracle.com/cd/E11882_01/server.112/e41084/functions156.htm#SQLRF06100
 - todo pentru generat date: https://www.brentozar.com/archive/2016/06/getting-started-with-oracle-generating-test-data/
@@ -68,3 +69,10 @@ DBs:
 - caching:
   - Redis
   - [Dragonfly](https://github.com/dragonflydb/dragonfly): alternativă la Redis/Memcached
+
+Misc:
+- https://docs.oracle.com/cd/B10500_01/appdev.920/a96624/07_errs.htm#784
+- https://docs.oracle.com/cd/B28359_01/server.111/b28278/toc.htm
+- https://news.ycombinator.com/item?id=18442637
+- https://danieltemkin.com/Esolangs/Folders/
+- https://en.wikipedia.org/wiki/Copy-on-write
