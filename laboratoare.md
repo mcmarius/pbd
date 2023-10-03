@@ -42,7 +42,7 @@ FROM (
         ) AS nr
     FROM employees
     ORDER BY department_id, nr
-) AS employees_ranked
+) employees_ranked  -- sau ) AS employees_ranked dacă nu suntem pe Oracle
 WHERE nr <= 5;
 ```
 
