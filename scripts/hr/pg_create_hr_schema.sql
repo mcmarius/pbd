@@ -2,6 +2,12 @@
 --create tables
 BEGIN; 
 
+-- for postgres >= 15
+-- https://stackoverflow.com/questions/74110708/postgres-15-permission-denied-for-schema-public
+DROP SCHEMA IF EXISTS hr;
+CREATE SCHEMA hr;
+SET search_path='hr';
+
 ALTER TABLE IF EXISTS departments 
   DROP CONSTRAINT dept_mgr_fk;
 DROP TABLE IF EXISTS job_history;
