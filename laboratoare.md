@@ -1734,7 +1734,7 @@ Folosim triggeri de tip AFTER în următoarele situații:
 - denormalizarea bazei de date pentru acces mai rapid la date
 
 Este de preferat să avem triggeri separați decât să avem un singur trigger cu
-verificări la runtime pentru tipul de eveniment din motive de performanță.
+verificări la runtime pentru tipul de eveniment din motive de performanță. Pe de altă parte, este și mai bine să avem un singur trigger compus în loc de mai mulți triggeri pentru a avea loc mai puține declanșări (vezi documentație - link mai jos).
 
 În Oracle, nu ne putem referi la rândurile modificate în triggeri la nivel de instrucțiune.
 
@@ -1742,8 +1742,10 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
 - pentru Postgres, avem clauza `REFERENCING OLD/NEW TABLE AS...`
 - pentru SQL Server, avem tabelele `INSERTED` și `DELETED`
 
+Exemplu: să nu se permită schimbarea prenumelui unui angajat dacă în departamentul în care se află sunt mai mult de 20 de angajați. Exercițiu: ce nu s-a luat în considerare în exemplul de mai jos?
+
 <details>
-<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-triggers.html">aici</a>)</summary>
+<summary>Oracle (documentație <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-triggers.html">aici</a> și <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/CREATE-TRIGGER-statement.html">aici</a>)</summary>
   <pre lang="sql">
     -- setup inițial
     CREATE TABLE employees_copy AS SELECT * FROM employees;
@@ -1754,19 +1756,19 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
     ON employees_copy
     FOR EACH ROW
     DECLARE
-	    nr INT;
+        nr INT;
     BEGIN
-	    SELECT COUNT(*)
-	    INTO nr
-	    -- FROM employees_copy e  -- nu merge așa - trigger is mutating
-	    -- problema cu mutating e doar pe Oracle
-	    -- se poate rezolva cu compound trigger
-	    FROM employees e
-	    WHERE e.DEPARTMENT_ID = :OLD.department_id;
+        SELECT COUNT(*)
+        INTO nr
+        -- FROM employees_copy e  -- nu merge așa - table is mutating, trigger may not see it
+        -- problema cu mutating e doar pe Oracle
+        -- se poate rezolva cu compound trigger, vezi mai jos
+        FROM employees e
+        WHERE e.DEPARTMENT_ID = :NEW.department_id;
         --
-	    IF nr > 20 THEN
-		    RAISE_APPLICATION_ERROR(-20001, 'prea multa lume');
-	    END IF;
+        IF nr > 20 THEN
+                RAISE_APPLICATION_ERROR(-20001, 'prea multa lume');
+        END IF;
     END trig_ang;
     --
     -- teste trigger
@@ -1788,6 +1790,61 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
     DROP TABLE employees_copy;  </pre>
 </details>
 
+Acest exemplu va declanșa trigger-ul anterior (este corect):
+```sql
+UPDATE employees_copy
+SET first_name = 'asd',
+    department_id = 50     -- departamentul cu id-ul 50 are 45 de angajați
+WHERE department_id = 30;  -- departamentul cu id-ul 30 are 6 angajați
+```
+În schimb, următorul exemplu nu va declanșa trigger-ul `trig_ang`, deși ar trebui:
+```sql
+UPDATE employees_copy
+SET first_name = 'asd',
+    department_id = 30
+WHERE department_id = 50;
+```
+
+
+Pentru a evita problema cu mutating table, fie folosim abordarea anterioară împreună cu încă un trigger pentru a ține cele 2 tabele sincronizate, fie folosim triggeri compuși (recomandat).
+<details>
+<summary>Exemplu trigger compus (Oracle)</summary>
+  <pre lang="sql">
+    -- setup inițial ca mai devreme
+    --
+    CREATE OR REPLACE TRIGGER trig_ang_bun
+    FOR
+    DELETE OR UPDATE OF first_name
+    ON employees_copy
+    COMPOUND TRIGGER
+        TYPE t_dep_type IS TABLE OF NUMBER
+            INDEX BY PLS_INTEGER;
+        --
+        t_dep t_dep_type;
+        --
+        BEFORE EACH ROW IS
+        BEGIN
+            -- reținem fiecare id de departament
+            t_dep(t_dep.count + 1) := :NEW.department_id;
+        END BEFORE EACH ROW;
+        --
+        AFTER STATEMENT IS
+            nr NUMBER;
+        BEGIN
+            FOR i IN 1..t_dep.count LOOP
+                SELECT count(*)
+                INTO nr
+                FROM employees_copy
+                WHERE department_id = t_dep(i);
+                IF nr > 20 THEN
+                    raise_application_error(-20360, 'nu te mai gaseste lumea');
+                END IF;
+            END LOOP;
+        END AFTER STATEMENT;
+    END trig_ang_bun;  </pre>
+</details>
+
+
 <details>
 <summary>PostgreSQL (documentație <a href="https://www.postgresql.org/docs/current/sql-createtrigger.html">aici</a> și <a href="https://www.postgresql.org/docs/current/plpgsql-trigger.html">aici</a>)</summary>
   <pre lang="sql">
@@ -1803,7 +1860,7 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
         SELECT COUNT(*)
         INTO nr
         FROM employees_copy e
-        WHERE e.DEPARTMENT_ID = OLD.department_id;
+        WHERE e.DEPARTMENT_ID = NEW.department_id;
         --
         IF nr > 20 THEN
             RAISE EXCEPTION 'prea multa lume';
@@ -1904,7 +1961,7 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
         SELECT COUNT(*)
         INTO nr
         FROM employees_copy e
-        WHERE e.DEPARTMENT_ID = OLD.department_id;
+        WHERE e.DEPARTMENT_ID = NEW.department_id;
         --
         IF nr > 20 THEN
             -- https://mariadb.com/kb/en/sqlstate/
@@ -1941,7 +1998,7 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
     WHEN (
         SELECT COUNT(*)
         FROM employees_copy e
-        WHERE e.DEPARTMENT_ID = OLD.department_id
+        WHERE e.DEPARTMENT_ID = NEW.department_id
     ) > 20
     BEGIN
         -- https://stackoverflow.com/questions/22201049/
@@ -1965,3 +2022,4 @@ verificări la runtime pentru tipul de eveniment din motive de performanță.
 
 
 ## Laborator 9 - declanșatori
+
