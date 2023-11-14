@@ -71,8 +71,13 @@ DBs:
   - [Dragonfly](https://github.com/dragonflydb/dragonfly): alternativă la Redis/Memcached
 
 Misc:
-- https://docs.oracle.com/cd/B10500_01/appdev.920/a96624/07_errs.htm#784
-- https://docs.oracle.com/cd/B28359_01/server.111/b28278/toc.htm
+- Excepții predefinite Oracle
+  - [Oracle 11g](https://docs.oracle.com/cd/E11882_01/appdev.112/e25519/errors.htm#LNPLS00703)
+  - [Oracle 23c](https://docs.oracle.com/en/database/oracle////oracle-database/23/lnpls/plsql-error-handling.html#GUID-8C327B4A-71FA-4CFB-8BC9-4550A23734D6)
+- Coduri de eroare Oracle
+  - [Oragle 11g (11.1)](https://docs.oracle.com/cd/B28359_01/server.111/b28278/toc.htm)
+  - [Oragle 11g (11.2)](https://docs.oracle.com/cd/E11882_01/server.112/e17766/toc.htm)
+  - [Oracle 23c](https://docs.oracle.com/en/database/oracle/oracle-database/23/errmg/ORA-00000.html#GUID-27437B7F-F0C3-4F1F-9C6E-6780706FB0F6)
 - https://news.ycombinator.com/item?id=18442637
 - https://danieltemkin.com/Esolangs/Folders/
 - https://en.wikipedia.org/wiki/Copy-on-write
