@@ -47,6 +47,7 @@ alternativ, dar mai puține date: https://www.sqltutorial.org/sql-sample-databas
 
 - https://nils85.github.io/sql-compat-table/index.html
 - https://use-the-index-luke.com/
+- https://db-engines.com/en/
 - https://stackoverflow.com/questions/49110728/where-current-of-in-pl-sql
 - https://docs.oracle.com/cd/E11882_01/server.112/e41084/functions156.htm#SQLRF06100
 - todo pentru generat date: https://www.brentozar.com/archive/2016/06/getting-started-with-oracle-generating-test-data/
