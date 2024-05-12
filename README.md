@@ -1,4 +1,4 @@
-# Proiectarea Bazelor de Date
+# Sisteme Avansate de Baze de Date
 
 ### Introducere
 
