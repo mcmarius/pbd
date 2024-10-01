@@ -1,0 +1,5 @@
+scripts/hr/mysql*     linguist-language=SQL
+scripts/hr/oracle*    linguist-language=PLSQL
+scripts/hr/pg*        linguist-language=PLpgSQL
+scripts/hr/sqlite*    linguist-language=SQL
+scripts/hr/sqlserver* linguist-language=TSQL
