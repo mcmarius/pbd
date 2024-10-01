@@ -350,12 +350,12 @@ Bazele de date Oracle pot fi folosite în mod gratuit dacă nu este vorba de sco
   - cu alte cuvinte, dacă nu știi de chichițele cu licențele, folosești fără să vrei/știi facilități premium fără licență, iar apoi vin să te controleze și te amendează
 - EE (enterprise edition): licențe pe și mai mulți bani
 
-<p style="text-align: center;">
+<p align=center>
   <a href="https://user-images.githubusercontent.com/23401453/190024309-0da4d6ef-2fa7-41e0-a5ac-2190a1d931bf.png">
     <img src="https://user-images.githubusercontent.com/23401453/190024213-4948b69c-16d5-41c6-a5c4-f7fb7c8043ba.png" alt="big tech company org charts"/>
   </a>
 </p>
-<p style="text-align: right;"><a href="https://images.fastcompany.net/image/upload/fc/3046512-inline-3-organizationalcharts.png">(sursa imaginii)</a></p>
+<p align=right><a href="https://images.fastcompany.net/image/upload/fc/3046512-inline-3-organizationalcharts.png">(sursa imaginii)</a></p>
 
 Noi folosim varianta FREE pentru că celelalte variante ocupă mult prea mult spațiu și oricum nu ne interesează facilitățile în plus.
 
