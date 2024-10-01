@@ -18,3 +18,6 @@ ALTER TABLE departments ADD FOREIGN KEY (manager_id) REFERENCES employees (emplo
 ALTER TABLE job_history ADD FOREIGN KEY (employee_id) REFERENCES employees(employee_id);
 ALTER TABLE job_history ADD FOREIGN KEY (job_id) REFERENCES jobs(job_id);
 ALTER TABLE job_history ADD FOREIGN KEY (department_id) REFERENCES departments(department_id);
+
+COMMIT;
+

@@ -31,19 +31,26 @@ Avem mai multe motive să ne creăm o bază de date locală pe lângă baza de d
   - bazele de date create de noi nu ar trebui să ocupe mai mult de câțiva MB
 - instalare [`docker`](https://docs.docker.com/engine/install/) sau [`podman`](https://podman.io/getting-started/installation)
 
-Spațiul ocupat de imagini (total ~4.2 GB):
+Spațiul ocupat de imagini (total ~4.7 GB):
 ```
 $ podman images
-REPOSITORY                      TAG          IMAGE ID      CREATED       SIZE
-docker.io/library/mariadb       10.9         01d138caf7d0  2 weeks ago   391 MB
-docker.io/library/postgres      14.5-alpine  a762fe0bf572  4 weeks ago   220 MB
-mcr.microsoft.com/mssql/server  2019-latest  e3afdc6d8e5c  2 years ago   1.48 GB
-mcr.microsoft.com/mssql/server  2022-latest  72ace9e68031  11 days ago   1.59 GB
-docker.io/gvenzl/oracle-xe      21.3.0-slim  8c74998e130b  2 years ago   2.08 GB
-docker.io/gvenzl/oracle-free    23.5-slim    e2b96e7b0743  9 days ago    1.82 GB
+REPOSITORY                      TAG          IMAGE ID      CREATED        SIZE
+docker.io/library/mariadb       10.9         01d138caf7d0  2 years ago    391 MB
+docker.io/library/mariadb       11.4.3       e5989c279833  4 weeks ago    418 MB
+docker.io/library/mysql         8.2.0        f7fdab215ab7  11 months ago  621 MB
+docker.io/library/mysql         8.4.2        f742bd39cd6b  2 months ago   600 MB
+docker.io/library/postgres      14.5-alpine  a762fe0bf572  4 weeks ago    220 MB
+docker.io/library/postgres      17.0-alpine  bb46dc8bfad7  5 days ago     251 MB
+mcr.microsoft.com/mssql/server  2019-latest  e3afdc6d8e5c  2 years ago    1.48 GB
+mcr.microsoft.com/mssql/server  2022-latest  72ace9e68031  11 days ago    1.59 GB
+docker.io/gvenzl/oracle-xe      21.3.0-slim  8c74998e130b  2 years ago    2.08 GB
+docker.io/gvenzl/oracle-free    23.5-slim    e2b96e7b0743  9 days ago     1.82 GB
 ```
 
-Spațiul ocupat de volumele containerelor (total ~3.2 GB):
+Observație: imaginile de PostgreSQL ocupă mult mai puțin pentru că sunt bazate pe Alpine Linux;
+doar MariaDB/MySQL au și imagini bazate pe Alpine, însă nu sunt oficiale.
+
+Spațiul ocupat de volumele containerelor (total ~3.2 GB (în 2022)):
 ```
 $ du -h pbd_data/backups/podman/*
 137M    pbd_data/backups/podman/mariadb-volume.bak
@@ -86,7 +93,7 @@ $ podman create \
     --env APP_USER=first_user \
     --env APP_USER_PASSWORD=userpass \
     --volume oracle-free-volume:/opt/oracle/oradata \
-    gvenzl/oracle-free:23.5-slim
+    docker.io/gvenzl/oracle-free:23.5-slim
 ```
 
 2. Pornim containerul:
@@ -100,17 +107,17 @@ $ podman start -ia oracle-free-container
   - **role: `SYSDBA` sau `SYSOPER`**
   - password: `admin_pass1` (cea pe care am configurat-o mai sus)
   - port: 1521 (configurat când am creat containerul)
-  - SID: `free`
+  - SID: `free` (sau `FREE`)
 - ca user normal:
-  - username: `first_user` (configurat mai sus sau creat de admin, vezi mai jos)
-  - password: `userpass` (configurat mai sus sau creat de admin, vezi mai jos)
+  - username: `first_user` (configurat mai sus; sau creat de admin, vezi mai jos)
+  - password: `userpass` (configurat mai sus; sau creat de admin, vezi mai jos)
   - port: 1521
   - nu ne conectăm cu `SID`, ci cu **`Service name`: `FREEPDB1`**
 
 4. Rulăm script-urile pentru creat/populat tabelele
- - creare tabele schema HR
- - inserare date schema HR
- - creare tabele și inserare date schemele project și video
+ - [creare tabele schema HR](./scripts/hr/oracle_23_hr_create.sql)
+ - [inserare date schema HR](./scripts/hr/oracle_23_hr_insert.sql)
+ - creare tabele și inserare date schemele [project](./scripts/hr/oracle_hr_project.sql) și [video](./scripts/hr/oracle_23_schema_video.sql)
 
 #### Cleanup
 ```bash
@@ -159,7 +166,6 @@ $ podman create --name=oracle-free-container \
                 -e ORACLE_PASSWORD=admin_pass1 \
                 -v oracle-free-volume:/opt/oracle/oradata \
                 gvenzl/oracle-free:23.5.0-slim
-025ba033ba5596aabd600485f411c7fa332c2561c80dd185811d3b270471990e
 ```
 Sau, dacă dorim să fie creat automat și un user normal:
 ```bash
@@ -182,7 +188,9 @@ CONTAINER: first database startup, initializing...
 CONTAINER: uncompressing database data files, please wait...
 CONTAINER: done uncompressing database data files, duration: 3 seconds.
 CONTAINER: starting up Oracle Database...
-
+```
+<details><summary>(Restul de logs)</summary>
+<pre>
 LSNRCTL for Linux: Version 23.0.0.0.0 - for Oracle Cloud and Engineered Systems on 01-OCT-2024 17:28:30
 
 Copyright (c) 1991, 2024, Oracle.  All rights reserved.
@@ -209,8 +217,8 @@ Default Service           FREE
 Listener Parameter File   /opt/oracle/product/23ai/dbhomeFree/network/admin/listener.ora
 Listener Log File         /opt/oracle/diag/tnslsnr/65740634cc2b/listener/alert/log.xml
 Listening Endpoints Summary...
-  (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC_FOR_FREE)))
-  (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=0.0.0.0)(PORT=1521)))
+(DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC_FOR_FREE)))
+(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=0.0.0.0)(PORT=1521)))
 The listener supports no services
 The command completed successfully
 ORACLE instance started.
@@ -241,7 +249,10 @@ User created.
 Grant succeeded.
 
 CONTAINER: DONE: Creating app user for default pluggable database.
+</pre>
+</details>
 
+```
 #########################
 DATABASE IS READY TO USE!
 #########################
@@ -270,6 +281,7 @@ DATABASE IS READY TO USE!
 
 Avem nevoie să ne creăm useri ca să nu lucrăm pe baza de date principală cu drepturi de admin full.
 Dacă nu am folosit comanda care creează și un utilizator normal sau vrem și alți utilizatori, avem 2 variante:
+
 a. Varianta 1: Ne logăm ca admin dintr-un client SQL, apoi
 ```sql
 ALTER SESSION SET CONTAINER=FREEPDB1;
@@ -292,7 +304,7 @@ Astfel, parola va rămâne în istoricul terminalului. Pentru testare, este irel
 :warning: Atenție! Nu vom folosi utilizatorul admin în mod uzual.
 Este de preferat să ne creăm useri cu drepturi (privilegii) limitate care să nu aibă posibilitatea să arunce în aer toată BD :boom:
 
-Pentru credențialele bazei de date a facultății, veniți la ore :smile:
+Pentru credențialele bazei de date ale facultății, veniți la ore :smile:
 
 PDB vine de la pluggable database (specific Oracle; detalii [aici](https://www.databasestar.com/oracle-pdb/)).
 Implicit, este deja creată o bază de date pluggable: FREEPDB1.
@@ -338,12 +350,12 @@ Bazele de date Oracle pot fi folosite în mod gratuit dacă nu este vorba de sco
   - cu alte cuvinte, dacă nu știi de chichițele cu licențele, folosești fără să vrei/știi facilități premium fără licență, iar apoi vin să te controleze și te amendează
 - EE (enterprise edition): licențe pe și mai mulți bani
 
-<p align=center>
+<p style="text-align: center;">
   <a href="https://user-images.githubusercontent.com/23401453/190024309-0da4d6ef-2fa7-41e0-a5ac-2190a1d931bf.png">
     <img src="https://user-images.githubusercontent.com/23401453/190024213-4948b69c-16d5-41c6-a5c4-f7fb7c8043ba.png" alt="big tech company org charts"/>
   </a>
 </p>
-<p align=right><a href="https://images.fastcompany.net/image/upload/fc/3046512-inline-3-organizationalcharts.png">(sursa imaginii)</a></p>
+<p style="text-align: right;"><a href="https://images.fastcompany.net/image/upload/fc/3046512-inline-3-organizationalcharts.png">(sursa imaginii)</a></p>
 
 Noi folosim varianta FREE pentru că celelalte variante ocupă mult prea mult spațiu și oricum nu ne interesează facilitățile în plus.
 
@@ -394,10 +406,10 @@ Este necesar să dăm fiecare privilegiu separat. La fel ca mai sus, dorim să n
 creăm o bază de date separată și un user cu mai puține privilegii.
 
 Din clientul SQL rulăm ca admin script-urile din repo în ordine:
-- create tables
-- create view
-- insert data
-- add foreign keys
+- [create tables](./scripts/hr/sqlserver_1_create_tables.sql)
+- [create view](./scripts/hr/sqlserver_2_create_view.sql)
+- [insert data](./scripts/hr/sqlserver_3_insert_data_fixed.sql)
+- [add foreign keys](./scripts/hr/sqlserver_4_add_foreign_keys.sql)
 
 Apoi creăm user-ul și îi dăm drepturi:
 ```sql
@@ -443,7 +455,7 @@ La fel ca toate produsele Microsoft, SQL Server se bazează (prea mult) pe inter
 ceea ce face anevoios procesul de configurare fără GUI (nu mai vorbim de automatizare).
 Conform documentației, SQL Server pare să ofere posibilitatea unui user să aibă mai multe scheme, însă acordarea permisiunilor este un chin.
 
-### Setup MariaDB
+### Setup MariaDB/MySQL
 
 MariaDB este un fork din MySQL și pentru ce avem noi nevoie le vom considera echivalente.
 Prefer MariaDB în detrimentul MySQL deoarece MySQL este cumpărat de Oracle și ne ajunge o bază de date Oracle.
@@ -464,7 +476,7 @@ $ podman start -ia mariadb-11-container
 $ podman stop mariadb-11-container
 ```
 
-Putem rula direct script-ul din contextul utilizatorului normal pentru a crea tabelele și a insera datele.
+Putem rula direct [script-ul](./scripts/hr/mysql-hr-schema.sql) din contextul utilizatorului normal pentru a crea tabelele și a insera datele.
 
 Opțional, din clientul SQL ca admin verificăm că avem deja drepturi pentru utilizatorul normal:
 ```sql
@@ -520,7 +532,7 @@ DROP DATABASE pbd;
 DROP USER seria36;
 ```
 
-Din clientul SQL ca user simplu după ce am rulat script-ul:
+Din clientul SQL ca user normal după ce am rulat script-ul:
 ```sql
 SET search_path TO hr;
 

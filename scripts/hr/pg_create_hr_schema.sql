@@ -4,7 +4,7 @@ BEGIN;
 
 -- for postgres >= 15
 -- https://stackoverflow.com/questions/74110708/postgres-15-permission-denied-for-schema-public
-DROP SCHEMA IF EXISTS hr;
+DROP SCHEMA IF EXISTS hr CASCADE;
 CREATE SCHEMA hr;
 SET search_path='hr';
 

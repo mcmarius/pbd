@@ -8,7 +8,7 @@
 DROP SCHEMA
 
 IF EXISTS hr;
-	CREATE SCHEMA hr COLLATE = utf8_general_ci;
+	CREATE SCHEMA hr COLLATE = utf8mb4_general_ci;
 
 USE hr;
 
@@ -16,7 +16,7 @@ USE hr;
 ***************************CREATING TABLES************************
 **************************************************************** */
 CREATE TABLE regions (
-	region_id INT (11) UNSIGNED NOT NULL,
+	region_id INT UNSIGNED NOT NULL,
 	region_name VARCHAR(25),
 	PRIMARY KEY (region_id)
 	);
@@ -24,13 +24,13 @@ CREATE TABLE regions (
 CREATE TABLE countries (
 	country_id CHAR(2) NOT NULL,
 	country_name VARCHAR(40),
-	region_id INT (11) UNSIGNED NOT NULL,
+	region_id INT UNSIGNED NOT NULL,
 	PRIMARY KEY (country_id)
 );
 
 
 CREATE TABLE locations (
-	location_id INT (11) UNSIGNED NOT NULL AUTO_INCREMENT,
+	location_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 	street_address VARCHAR(40),
 	postal_code VARCHAR(12),
 	city VARCHAR(30) NOT NULL,
@@ -40,23 +40,23 @@ CREATE TABLE locations (
 	);
 
 CREATE TABLE departments (
-	department_id INT (11) UNSIGNED NOT NULL,
+	department_id INT UNSIGNED NOT NULL,
 	department_name VARCHAR(30) NOT NULL,
-	manager_id INT (11) UNSIGNED,
-	location_id INT (11) UNSIGNED,
+	manager_id INT UNSIGNED,
+	location_id INT UNSIGNED,
 	PRIMARY KEY (department_id)
 	);
 
 CREATE TABLE jobs (
 	job_id VARCHAR(10) NOT NULL,
 	job_title VARCHAR(35) NOT NULL,
-	min_salary DECIMAL(8, 0) UNSIGNED,
-	max_salary DECIMAL(8, 0) UNSIGNED,
+	min_salary DECIMAL(8, 0), CHECK (min_salary >= 0),
+	max_salary DECIMAL(8, 0), CHECK (max_salary >= 0),
 	PRIMARY KEY (job_id)
 	);
 
 CREATE TABLE employees (
-	employee_id INT (11) UNSIGNED NOT NULL,
+	employee_id INT UNSIGNED NOT NULL,
 	first_name VARCHAR(20),
 	last_name VARCHAR(25) NOT NULL,
 	email VARCHAR(25) NOT NULL,
@@ -65,17 +65,17 @@ CREATE TABLE employees (
 	job_id VARCHAR(10) NOT NULL,
 	salary DECIMAL(8, 2) NOT NULL,
 	commission_pct DECIMAL(2, 2),
-	manager_id INT (11) UNSIGNED,
-	department_id INT (11) UNSIGNED,
+	manager_id INT UNSIGNED,
+	department_id INT UNSIGNED,
 	PRIMARY KEY (employee_id)
 	);
 
 CREATE TABLE job_history (
-	employee_id INT (11) UNSIGNED NOT NULL,
+	employee_id INT UNSIGNED NOT NULL,
 	start_date DATE NOT NULL,
 	end_date DATE NOT NULL,
 	job_id VARCHAR(10) NOT NULL,
-	department_id INT (11) UNSIGNED NOT NULL
+	department_id INT UNSIGNED NOT NULL
 	);
 
 ALTER TABLE job_history ADD UNIQUE INDEX (

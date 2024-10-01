@@ -1,4 +1,19 @@
 
+-- DROP TABLE job_grades;
+-- DROP TABLE job_history;
+
+-- DROP TABLE employees CASCADE CONSTRAINTS;
+-- DROP TABLE jobs;
+-- DROP TABLE departments;
+
+-- DROP TABLE locations;
+-- DROP TABLE countries;
+-- DROP TABLE regions; 
+
+-- DROP SEQUENCE locations_seq;
+-- DROP SEQUENCE departments_seq;
+-- DROP SEQUENCE employees_seq;
+
 CREATE TABLE regions
     ( region_id      NUMBER 
        CONSTRAINT  region_id_nn NOT NULL 
