@@ -329,7 +329,9 @@ Pot fi adăugate [funcții proprii](https://www.sqlite.org/appfunc.html) din alt
         -- DROP TABLE tbl;
         -- trebuie să folosim proceduri dedicate și cursoare; vezi la cursoare
         --
-        -- incrementare/decrementare doar cu pas 1
+        -- incrementare/decrementare doar cu pas 1 până în Oracle 21c
+        -- din Oracle 21c există incrementare cu "BY k"
+        -- https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/plsql-control-statements.html#GUID-F8D95A75-6475-439E-B3F1-BB3D683E1751
         FOR i IN 1..x LOOP
             CONTINUE WHEN i < 2;
             EXIT WHEN i > 7;
