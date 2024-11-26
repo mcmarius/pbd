@@ -51,6 +51,7 @@ alternativ, dar mai puține date: https://www.sqltutorial.org/sql-sample-databas
 - https://stackoverflow.com/questions/49110728/where-current-of-in-pl-sql
 - https://docs.oracle.com/cd/E11882_01/server.112/e41084/functions156.htm#SQLRF06100
 - todo pentru generat date: https://www.brentozar.com/archive/2016/06/getting-started-with-oracle-generating-test-data/
+- todo pentru rollback la triggers: https://asktom.oracle.com/ords/f?p=100:11:0::::P11_QUESTION_ID:9533569800346326535
 
 
 DBs:
