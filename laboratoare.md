@@ -1023,9 +1023,14 @@ CREATE TABLE tbl_imb2 (
     id int,
     tbl_tab tab_tab
 )
-NESTED TABLE tbl_tab STORE AS tbl_tab_store;
+NESTED TABLE tbl_tab STORE AS tbl_tab_store (
+    NESTED TABLE COLUMN_VALUE STORE AS tbl_int_store2
+);
 
 SELECT tab_int(1, 2, 50)
+FROM dual;
+
+SELECT tab_tab(tab_int(1, 2, 50), tab_int(3, 2, 1))
 FROM dual;
 ```
 
